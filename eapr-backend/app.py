@@ -457,8 +457,9 @@ def addmedicationstatement():
 
         else:
             return jsonify({'success':False,'message':'invalid email/password'}), 404
-    except:
-        return jsonify({'success':False,'message':'Request misses token/json data'}), 400
+    except Exception as err_msg:
+        print(str(err_msg))
+        return jsonify({'success':False,'message':'Request misses token/json data','err':str(err_msg)}), 400
 
 
 # APIS FOR PRESCRIPTION
