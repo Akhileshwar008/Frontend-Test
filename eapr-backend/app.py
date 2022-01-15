@@ -43,6 +43,7 @@ def doctorRegisterSuccess():
         else:
             return jsonify({'success':False,'message':'Doctor Already Existed for this email'}), 404 
     except Exception as e:
+        print(str(e))
         return jsonify({'success':False,'message':'not recieved JSON data'}),400
 
 # Api for Admin Login
@@ -106,24 +107,24 @@ def getallmedicationstatements():
         if res:
             
             res2=Medication_statement.query.filter_by(patient_id=res.id).all()
-            
-            output=[]
+            output={}
+            medicationstatements=[]
             for res3 in res2:
-                
                 result = Medication.query.filter_by(order_id=res3.order_id).first()
-                
                 obj={}
-                
                 obj['order_id']=result.order_id
                 obj['medication_item']=result.medication_item
-                
-                
-                
-                output.append(obj)
-            return jsonify({"success":True, "allmedicationstatements":output})
+                medicationstatements.append(obj)
+            res3=Medication_summary.query.filter_by(patient_id=res.id).first()
+            output['global_exclusion_of_medication_use']=res3.global_exclusion_of_medication_use
+            output['absence_of_info_statement']=res3.absence_of_info_statement
+            output['absence_of_info_protocol_last_updated']=res3.absence_of_info_protocol_last_updated
+            output['medication_statements']=medicationstatements
+            return jsonify({"success":True, "medication_summary":output})
         else:
             return jsonify({'success':False,'message':'invalid email/password'}), 404
-    except:
+    except Exception as e:
+        print(e)
         return jsonify({'success':False,'message':'Request misses token/json data'}), 400
 
 @app.route('/api/ips/medicationsummary/getallmedicationstatementsfordoctor',methods=['GET'])
@@ -138,25 +139,25 @@ def getallmedicationstatementsfordoctor():
 
             
             res2=Medication_statement.query.filter_by(patient_id=Patient_Id).all()
-            if res2:
-                
-                output=[]
-                for res3 in res2:
-                    
-                    result = Medication.query.filter_by(order_id=res3.order_id).first()
-                    
-                    obj={}
-                    
-                    obj['order_id']=result.order_id
-                    obj['medication_item']=result.medication_item
-                    
-                    
-                    
-                    output.append(obj)
-            return jsonify({"success":True, "allmedicationstatements":output})
+            output={}
+            medicationstatements=[]
+            for res3 in res2:
+                result = Medication.query.filter_by(order_id=res3.order_id).first()
+                obj={}
+                obj['order_id']=result.order_id
+                obj['medication_item']=result.medication_item
+                medicationstatements.append(obj)
+            res3=Medication_summary.query.filter_by(patient_id=res.id).first()
+            output['global_exclusion_of_medication_use']=res3.global_exclusion_of_medication_use
+            output['absence_of_info_statement']=res3.absence_of_info_statement
+            output['absence_of_info_protocol_last_updated']=res3.absence_of_info_protocol_last_updated
+            output['medication_statements']=medicationstatements
+            return jsonify({"success":True, "medication_summary":output})
+
         else:
             return jsonify({'success':False,'message':'invalid email/password'}), 404
-    except:
+    except Exception as e:
+        print(e)
         return jsonify({'success':False,'message':'Request misses token/json data'}), 400
 
 
@@ -172,103 +173,107 @@ def getmedicationstatement():
             Order_Id=Ord['order_id']
 
             res1=db.session.query(Medication_statement).filter(Order_Id==Medication_statement.order_id,res.id==Medication_statement.patient_id).all()
-            result = db.session.query(Medication_summary,Medication,Dosage,Administration_details,Timing_non_daily).filter(res1[0].patient_id==Medication_summary.patient_id,Order_Id==Medication.order_id,Order_Id==Dosage.order_id,Order_Id==Administration_details.order_id,Order_Id==Timing_non_daily.order_id).all()
-            out={}
-            obj={}
-            obj['order_id']=res1[0].order_id
-            obj['patient_id']=result[0].Medication_summary.patient_id
-            #obj['global_exclusion_of_medication_use']=result[0].Medication_summary.global_exclusion_of_medication_use
-            #obj['absence_of_info_statement']=result[0].Medication.absence_of_info_statement
-            #obj['absence_of_info_protocol_last_updated']=result[0].Medication.absence_of_info_protocol_last_updated
-            l=obj
+            if res1:
 
-            obj={}
-            obj['order_id']=result[0].Medication.order_id
-            obj['medication_item']=result[0].Medication.medication_item
-            obj['medication_name']=result[0].Medication.medication_name
-            obj['medication_form']=result[0].Medication.medication_form
-            obj['medication_category']=result[0].Medication.medication_category
-            obj['medication_strength_numerator']=result[0].Medication.medication_strength_numerator
-            obj['medication_strength_numerator_unit']=result[0].Medication.medication_strength_numerator_unit
-            obj['medication_strength_denominator']=result[0].Medication.medication_strength_denominator
-            obj['medication_strength_denominator_unit']=result[0].Medication.medication_strength_denominator_unit
-            obj['unit_of_presentation']=result[0].Medication.unit_of_presentation
-            obj['strength']=result[0].Medication.strength
-            obj['manufacturer']=result[0].Medication.manufacturer
-            obj['batch_id']=result[0].Medication.batch_id
-            obj['expiry']=result[0].Medication.expiry
-            obj['amount']=result[0].Medication.amount
-            obj['amount_unit']=result[0].Medication.amount_unit
-            obj['alternate_amount']=result[0].Medication.alternate_amount
-            obj['alternate_amount_unit']=result[0].Medication.alternate_amount_unit
-            obj['role']=result[0].Medication.role
-            obj['description']=result[0].Medication.description
+                result = db.session.query(Medication_summary,Medication,Dosage,Administration_details,Timing_non_daily).filter(res1[0].patient_id==Medication_summary.patient_id,Order_Id==Medication.order_id,Order_Id==Dosage.order_id,Order_Id==Administration_details.order_id,Order_Id==Timing_non_daily.order_id).all()
+                out={}
+                obj={}
+                obj['order_id']=res1[0].order_id
+                obj['patient_id']=result[0].Medication_summary.patient_id
+                #obj['global_exclusion_of_medication_use']=result[0].Medication_summary.global_exclusion_of_medication_use
+                #obj['absence_of_info_statement']=result[0].Medication.absence_of_info_statement
+                #obj['absence_of_info_protocol_last_updated']=result[0].Medication.absence_of_info_protocol_last_updated
+                l=obj
 
-            m=obj
+                obj={}
+                obj['order_id']=result[0].Medication.order_id
+                obj['medication_item']=result[0].Medication.medication_item
+                obj['medication_name']=result[0].Medication.medication_name
+                obj['medication_form']=result[0].Medication.medication_form
+                obj['medication_category']=result[0].Medication.medication_category
+                obj['medication_strength_numerator']=result[0].Medication.medication_strength_numerator
+                obj['medication_strength_numerator_unit']=result[0].Medication.medication_strength_numerator_unit
+                obj['medication_strength_denominator']=result[0].Medication.medication_strength_denominator
+                obj['medication_strength_denominator_unit']=result[0].Medication.medication_strength_denominator_unit
+                obj['unit_of_presentation']=result[0].Medication.unit_of_presentation
+                obj['strength']=result[0].Medication.strength
+                obj['manufacturer']=result[0].Medication.manufacturer
+                obj['batch_id']=result[0].Medication.batch_id
+                obj['expiry']=result[0].Medication.expiry
+                obj['amount']=result[0].Medication.amount
+                obj['amount_unit']=result[0].Medication.amount_unit
+                obj['alternate_amount']=result[0].Medication.alternate_amount
+                obj['alternate_amount_unit']=result[0].Medication.alternate_amount_unit
+                obj['role']=result[0].Medication.role
+                obj['description']=result[0].Medication.description
+
+                m=obj
+                
+
+
+                obj={}
+                obj['id']=result[0].Dosage.id
+                obj['order_id']=result[0].Dosage.order_id
+                obj['dose_amount']=result[0].Dosage.dose_amount
+                obj['dose_unit']=result[0].Dosage.dose_unit
+                obj['dose_formula']=result[0].Dosage.dose_formula
+                obj['dose_description']=result[0].Dosage.dose_description
+                obj['frequency_lower']=result[0].Dosage.frequency_lower
+                obj['frequency_lower_rate']=result[0].Dosage.frequency_lower_rate
+                obj['frequency_higher']=result[0].Dosage.frequency_higher
+                obj['frequency_higher_rate']=result[0].Dosage.frequency_higher_rate
             
-
-
-            obj={}
-            obj['id']=result[0].Dosage.id
-            obj['order_id']=result[0].Dosage.order_id
-            obj['dose_amount']=result[0].Dosage.dose_amount
-            obj['dose_unit']=result[0].Dosage.dose_unit
-            obj['dose_formula']=result[0].Dosage.dose_formula
-            obj['dose_description']=result[0].Dosage.dose_description
-            obj['frequency_lower']=result[0].Dosage.frequency_lower
-            obj['frequency_lower_rate']=result[0].Dosage.frequency_lower_rate
-            obj['frequency_higher']=result[0].Dosage.frequency_higher
-            obj['frequency_higher_rate']=result[0].Dosage.frequency_higher_rate
-        
-            obj['interval']=result[0].Dosage.interval
-            obj['specific_time']=result[0].Dosage.specific_time
-            obj['specific_time_lower']=result[0].Dosage.specific_time_lower
-            obj['specific_time_upper']=result[0].Dosage.specific_time_upper
-            obj['timing_description']=result[0].Dosage.timing_description
-            obj['exact_timing_critical']=result[0].Dosage.exact_timing_critical
-            obj['as_required']=result[0].Dosage.as_required
-            obj['as_required_criterion']=result[0].Dosage.as_required_criterion
-            obj['event_name']=result[0].Dosage.event_name
-            obj['time_offset']=result[0].Dosage.time_offset
-            obj['on']=result[0].Dosage.on
-            obj['off']=result[0].Dosage.off
-            obj['repetetions']=result[0].Dosage.repetetions
-            n=obj
+                obj['interval']=result[0].Dosage.interval
+                obj['specific_time']=result[0].Dosage.specific_time
+                obj['specific_time_lower']=result[0].Dosage.specific_time_lower
+                obj['specific_time_upper']=result[0].Dosage.specific_time_upper
+                obj['timing_description']=result[0].Dosage.timing_description
+                obj['exact_timing_critical']=result[0].Dosage.exact_timing_critical
+                obj['as_required']=result[0].Dosage.as_required
+                obj['as_required_criterion']=result[0].Dosage.as_required_criterion
+                obj['event_name']=result[0].Dosage.event_name
+                obj['time_offset']=result[0].Dosage.time_offset
+                obj['on']=result[0].Dosage.on
+                obj['off']=result[0].Dosage.off
+                obj['repetetions']=result[0].Dosage.repetetions
+                n=obj
 
 
 
-            obj={}
-            obj['id']=result[0].Administration_details.id
-            obj['order_id']=result[0].Administration_details.order_id
-            obj['route']=result[0].Administration_details.route
-            obj['body_site']=result[0].Administration_details.body_site
-            o=obj
+                obj={}
+                obj['id']=result[0].Administration_details.id
+                obj['order_id']=result[0].Administration_details.order_id
+                obj['route']=result[0].Administration_details.route
+                obj['body_site']=result[0].Administration_details.body_site
+                o=obj
 
 
 
-            obj={}
-            obj['id']=result[0].Timing_non_daily.id
-            obj['order_id']=result[0].Timing_non_daily.order_id
-            obj['repetetion_interval']=result[0].Timing_non_daily.repetetion_interval
-            obj['frequency_lower']=result[0].Timing_non_daily.frequency_lower
-            obj['frequency_lower_rate']=result[0].Timing_non_daily.frequency_lower_rate
-            obj['frequency_higher']=result[0].Timing_non_daily.frequency_higher
-            obj['frequency_higher_rate']=result[0].Timing_non_daily.frequency_higher_rate
-            obj['specific_date']=result[0].Timing_non_daily.specific_date
-            obj['specific_date_lower']=result[0].Timing_non_daily.specific_date_lower
-            obj['specific_date_upper']=result[0].Timing_non_daily.specific_date_upper
-            obj['specific_day_of_week']=result[0].Timing_non_daily.specific_day_of_week
-            obj['specific_day_of_month']=result[0].Timing_non_daily.specific_day_of_month
-            obj['timing_description']=result[0].Timing_non_daily.timing_description
-            obj['event_name']=result[0].Timing_non_daily.event_name
-            obj['event_time_offset']=result[0].Timing_non_daily.event_time_offset
-            obj['on']=result[0].Timing_non_daily.on
-            obj['off']=result[0].Timing_non_daily.off
-            obj['repetetions']=result[0].Timing_non_daily.repetetions
-            p=obj
-            
-            out={'medication_statement':l,"medication":m,"dosage":n,"administration_details":o,"timing_non-daily":p}
-            return jsonify({"success":True, "data":out})
+                obj={}
+                obj['id']=result[0].Timing_non_daily.id
+                obj['order_id']=result[0].Timing_non_daily.order_id
+                obj['repetetion_interval']=result[0].Timing_non_daily.repetetion_interval
+                obj['frequency_lower']=result[0].Timing_non_daily.frequency_lower
+                obj['frequency_lower_rate']=result[0].Timing_non_daily.frequency_lower_rate
+                obj['frequency_higher']=result[0].Timing_non_daily.frequency_higher
+                obj['frequency_higher_rate']=result[0].Timing_non_daily.frequency_higher_rate
+                obj['specific_date']=result[0].Timing_non_daily.specific_date
+                obj['specific_date_lower']=result[0].Timing_non_daily.specific_date_lower
+                obj['specific_date_upper']=result[0].Timing_non_daily.specific_date_upper
+                obj['specific_day_of_week']=result[0].Timing_non_daily.specific_day_of_week
+                obj['specific_day_of_month']=result[0].Timing_non_daily.specific_day_of_month
+                obj['timing_description']=result[0].Timing_non_daily.timing_description
+                obj['event_name']=result[0].Timing_non_daily.event_name
+                obj['event_time_offset']=result[0].Timing_non_daily.event_time_offset
+                obj['on']=result[0].Timing_non_daily.on
+                obj['off']=result[0].Timing_non_daily.off
+                obj['repetetions']=result[0].Timing_non_daily.repetetions
+                p=obj
+                
+                out={'medication_statement':l,"medication":m,"dosage":n,"administration_details":o,"timing_non-daily":p}
+                return jsonify({"success":True, "data":out})
+            else:
+                return jsonify({'success':False,'message':'not authorised'}), 404
         else:
             return jsonify({'success':False,'message':'invalid email/password'}), 404
     except:
@@ -282,115 +287,119 @@ def getmedicationstatementfordoctor():
         value = jwt.decode(token, options={"verify_signature": False})
         res = doctor_details.query.filter_by(email=value['email'], password=value['password']).first()
         data=request.get_json()
-        Patient_Id=data['patient_id']
-        res3=Patient_details.query.filter_by(id = data['patient_id']).first()
         
-        if res and res3:
+    
+        
+        if res:
             
             Order_Id=data['order_id']
             
 
-            res1=db.session.query(Medication_statement).filter(Order_Id==Medication_statement.order_id,Patient_Id==Medication_statement.patient_id).all()
-            result = db.session.query(Medication_summary,Medication,Dosage,Administration_details,Timing_non_daily).filter(res1[0].patient_id==Medication_summary.patient_id,Order_Id==Medication.order_id,Order_Id==Dosage.order_id,Order_Id==Administration_details.order_id,Order_Id==Timing_non_daily.order_id).all()
-            out={}
-            obj={}
-            obj['order_id']=res1[0].order_id
-            obj['patient_id']=result[0].Medication_summary.patient_id
-            #obj['global_exclusion_of_medication_use']=result[0].Medication_summary.global_exclusion_of_medication_use
-            #obj['absence_of_info_statement']=result[0].Medication.absence_of_info_statement
-            #obj['absence_of_info_protocol_last_updated']=result[0].Medication.absence_of_info_protocol_last_updated
-            l=obj
+            res1=db.session.query(Medication_statement).filter(Order_Id==Medication_statement.order_id).all()
+            if res1:
+                result = db.session.query(Medication_summary,Medication,Dosage,Administration_details,Timing_non_daily).filter(res1[0].patient_id==Medication_summary.patient_id,Order_Id==Medication.order_id,Order_Id==Dosage.order_id,Order_Id==Administration_details.order_id,Order_Id==Timing_non_daily.order_id).all()
+                out={}
+                obj={}
+                obj['order_id']=res1[0].order_id
+                obj['patient_id']=result[0].Medication_summary.patient_id
+                #obj['global_exclusion_of_medication_use']=result[0].Medication_summary.global_exclusion_of_medication_use
+                #obj['absence_of_info_statement']=result[0].Medication.absence_of_info_statement
+                #obj['absence_of_info_protocol_last_updated']=result[0].Medication.absence_of_info_protocol_last_updated
+                l=obj
 
-            obj={}
-            obj['order_id']=result[0].Medication.order_id
-            obj['medication_item']=result[0].Medication.medication_item
-            obj['medication_name']=result[0].Medication.medication_name
-            obj['medication_form']=result[0].Medication.medication_form
-            obj['medication_category']=result[0].Medication.medication_category
-            obj['medication_strength_numerator']=result[0].Medication.medication_strength_numerator
-            obj['medication_strength_numerator_unit']=result[0].Medication.medication_strength_numerator_unit
-            obj['medication_strength_denominator']=result[0].Medication.medication_strength_denominator
-            obj['medication_strength_denominator_unit']=result[0].Medication.medication_strength_denominator_unit
-            obj['unit_of_presentation']=result[0].Medication.unit_of_presentation
-            obj['strength']=result[0].Medication.strength
-            obj['manufacturer']=result[0].Medication.manufacturer
-            obj['batch_id']=result[0].Medication.batch_id
-            obj['expiry']=result[0].Medication.expiry
-            obj['amount']=result[0].Medication.amount
-            obj['amount_unit']=result[0].Medication.amount_unit
-            obj['alternate_amount']=result[0].Medication.alternate_amount
-            obj['alternate_amount_unit']=result[0].Medication.alternate_amount_unit
-            obj['role']=result[0].Medication.role
-            obj['description']=result[0].Medication.description
+                obj={}
+                obj['order_id']=result[0].Medication.order_id
+                obj['medication_item']=result[0].Medication.medication_item
+                obj['medication_name']=result[0].Medication.medication_name
+                obj['medication_form']=result[0].Medication.medication_form
+                obj['medication_category']=result[0].Medication.medication_category
+                obj['medication_strength_numerator']=result[0].Medication.medication_strength_numerator
+                obj['medication_strength_numerator_unit']=result[0].Medication.medication_strength_numerator_unit
+                obj['medication_strength_denominator']=result[0].Medication.medication_strength_denominator
+                obj['medication_strength_denominator_unit']=result[0].Medication.medication_strength_denominator_unit
+                obj['unit_of_presentation']=result[0].Medication.unit_of_presentation
+                obj['strength']=result[0].Medication.strength
+                obj['manufacturer']=result[0].Medication.manufacturer
+                obj['batch_id']=result[0].Medication.batch_id
+                obj['expiry']=result[0].Medication.expiry
+                obj['amount']=result[0].Medication.amount
+                obj['amount_unit']=result[0].Medication.amount_unit
+                obj['alternate_amount']=result[0].Medication.alternate_amount
+                obj['alternate_amount_unit']=result[0].Medication.alternate_amount_unit
+                obj['role']=result[0].Medication.role
+                obj['description']=result[0].Medication.description
 
-            m=obj
-            
-
-
-            obj={}
-            obj['id']=result[0].Dosage.id
-            obj['order_id']=result[0].Dosage.order_id
-            obj['dose_amount']=result[0].Dosage.dose_amount
-            obj['dose_unit']=result[0].Dosage.dose_unit
-            obj['dose_formula']=result[0].Dosage.dose_formula
-            obj['dose_description']=result[0].Dosage.dose_description
-            obj['frequency_lower']=result[0].Dosage.frequency_lower
-            obj['frequency_lower_rate']=result[0].Dosage.frequency_lower_rate
-            obj['frequency_higher']=result[0].Dosage.frequency_higher
-            obj['frequency_higher_rate']=result[0].Dosage.frequency_higher_rate
-            
-            obj['interval']=result[0].Dosage.interval
-            obj['specific_time']=result[0].Dosage.specific_time
-            obj['specific_time_lower']=result[0].Dosage.specific_time_lower
-            obj['specific_time_upper']=result[0].Dosage.specific_time_upper
-            obj['timing_description']=result[0].Dosage.timing_description
-            obj['exact_timing_critical']=result[0].Dosage.exact_timing_critical
-            obj['as_required']=result[0].Dosage.as_required
-            obj['as_required_criterion']=result[0].Dosage.as_required_criterion
-            obj['event_name']=result[0].Dosage.event_name
-            obj['time_offset']=result[0].Dosage.time_offset
-            obj['on']=result[0].Dosage.on
-            obj['off']=result[0].Dosage.off
-            obj['repetetions']=result[0].Dosage.repetetions
-            n=obj
+                m=obj
+                
 
 
-
-            obj={}
-            obj['id']=result[0].Administration_details.id
-            obj['order_id']=result[0].Administration_details.order_id
-            obj['route']=result[0].Administration_details.route
-            obj['body_site']=result[0].Administration_details.body_site
-            o=obj
+                obj={}
+                obj['id']=result[0].Dosage.id
+                obj['order_id']=result[0].Dosage.order_id
+                obj['dose_amount']=result[0].Dosage.dose_amount
+                obj['dose_unit']=result[0].Dosage.dose_unit
+                obj['dose_formula']=result[0].Dosage.dose_formula
+                obj['dose_description']=result[0].Dosage.dose_description
+                obj['frequency_lower']=result[0].Dosage.frequency_lower
+                obj['frequency_lower_rate']=result[0].Dosage.frequency_lower_rate
+                obj['frequency_higher']=result[0].Dosage.frequency_higher
+                obj['frequency_higher_rate']=result[0].Dosage.frequency_higher_rate
+                
+                obj['interval']=result[0].Dosage.interval
+                obj['specific_time']=result[0].Dosage.specific_time
+                obj['specific_time_lower']=result[0].Dosage.specific_time_lower
+                obj['specific_time_upper']=result[0].Dosage.specific_time_upper
+                obj['timing_description']=result[0].Dosage.timing_description
+                obj['exact_timing_critical']=result[0].Dosage.exact_timing_critical
+                obj['as_required']=result[0].Dosage.as_required
+                obj['as_required_criterion']=result[0].Dosage.as_required_criterion
+                obj['event_name']=result[0].Dosage.event_name
+                obj['time_offset']=result[0].Dosage.time_offset
+                obj['on']=result[0].Dosage.on
+                obj['off']=result[0].Dosage.off
+                obj['repetetions']=result[0].Dosage.repetetions
+                n=obj
 
 
 
-            obj={}
-            obj['id']=result[0].Timing_non_daily.id
-            obj['order_id']=result[0].Timing_non_daily.order_id
-            obj['repetetion_interval']=result[0].Timing_non_daily.repetetion_interval
-            obj['frequency_lower']=result[0].Timing_non_daily.frequency_lower
-            obj['frequency_lower_rate']=result[0].Timing_non_daily.frequency_lower_rate
-            obj['frequency_higher']=result[0].Timing_non_daily.frequency_higher
-            obj['frequency_higher_rate']=result[0].Timing_non_daily.frequency_higher_rate
-            obj['specific_date']=result[0].Timing_non_daily.specific_date
-            obj['specific_date_lower']=result[0].Timing_non_daily.specific_date_lower
-            obj['specific_date_upper']=result[0].Timing_non_daily.specific_date_upper
-            obj['specific_day_of_week']=result[0].Timing_non_daily.specific_day_of_week
-            obj['specific_day_of_month']=result[0].Timing_non_daily.specific_day_of_month
-            obj['timing_description']=result[0].Timing_non_daily.timing_description
-            obj['event_name']=result[0].Timing_non_daily.event_name
-            obj['event_time_offset']=result[0].Timing_non_daily.event_time_offset
-            obj['on']=result[0].Timing_non_daily.on
-            obj['off']=result[0].Timing_non_daily.off
-            obj['repetetions']=result[0].Timing_non_daily.repetetions
-            p=obj
-            
-            out={'medication_statement':l,"medication":m,"dosage":n,"administration_details":o,"timing_non-daily":p}
-            return jsonify({"success":True, "data":out})
+                obj={}
+                obj['id']=result[0].Administration_details.id
+                obj['order_id']=result[0].Administration_details.order_id
+                obj['route']=result[0].Administration_details.route
+                obj['body_site']=result[0].Administration_details.body_site
+                o=obj
+
+
+
+                obj={}
+                obj['id']=result[0].Timing_non_daily.id
+                obj['order_id']=result[0].Timing_non_daily.order_id
+                obj['repetetion_interval']=result[0].Timing_non_daily.repetetion_interval
+                obj['frequency_lower']=result[0].Timing_non_daily.frequency_lower
+                obj['frequency_lower_rate']=result[0].Timing_non_daily.frequency_lower_rate
+                obj['frequency_higher']=result[0].Timing_non_daily.frequency_higher
+                obj['frequency_higher_rate']=result[0].Timing_non_daily.frequency_higher_rate
+                obj['specific_date']=result[0].Timing_non_daily.specific_date
+                obj['specific_date_lower']=result[0].Timing_non_daily.specific_date_lower
+                obj['specific_date_upper']=result[0].Timing_non_daily.specific_date_upper
+                obj['specific_day_of_week']=result[0].Timing_non_daily.specific_day_of_week
+                obj['specific_day_of_month']=result[0].Timing_non_daily.specific_day_of_month
+                obj['timing_description']=result[0].Timing_non_daily.timing_description
+                obj['event_name']=result[0].Timing_non_daily.event_name
+                obj['event_time_offset']=result[0].Timing_non_daily.event_time_offset
+                obj['on']=result[0].Timing_non_daily.on
+                obj['off']=result[0].Timing_non_daily.off
+                obj['repetetions']=result[0].Timing_non_daily.repetetions
+                p=obj
+                
+                out={'medication_statement':l,"medication":m,"dosage":n,"administration_details":o,"timing_non-daily":p}
+                return jsonify({"success":True, "data":out})
+            else:
+                return jsonify({'success':False,'message':'medication statement is not available'}), 404
         else:
             return jsonify({'success':False,'message':'invalid email/password'}), 404
-    except:
+    except Exception as e:
+        print(e)
         return jsonify({'success':False,'message':'Request misses token/json data'}), 400
 
 
@@ -535,6 +544,7 @@ def addPrescription():
             return jsonify({'success':False,'message':'Not Authorised'}),404
 
     except Exception as e :
+        print(e)
         return jsonify({'success':False,'message':'not recieved JSON/Token data'}),400 
 
         
@@ -656,7 +666,7 @@ def getPrescriptionByIdForPat():
             
             data = request.get_json()
             presId = data['prescriptionId']
-            patverfify = Prescription.query.filter_by(prescriptionId=presId, doctorId =patRes.id).first()
+            patverfify = Prescription.query.filter_by(prescriptionId=presId, patientId =patRes.id).first()
             if patverfify:
                 result = Medication_Order.query.filter_by(prescriptionId = presId).all()
                 if len(result):
@@ -805,8 +815,1589 @@ def getMedicationOrderByIdForPatient():
         return jsonify({'success':False,'message':'not recieved JSON/Token data'}),400 
 
 
+# Ajay
+
+# API for POST PREGNANCY 
+@app.route('/api/addPregnancyDetails',methods=['POST'])
+def addPregnancyDetails():
+    try:
+        token = request.headers['token']
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        admin_check= Admin_Login.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if admin_check:
+            data=request.get_json()
+            entry = Pregnancy(
+                patient_id=data['patient_id'],
+                pregnancy_status = data['pregnancy_status'],
+                pregnancy_outcome = data['pregnancy_outcome'],
+                estimated_date_of_delivery_by_date_of_conseption = data['estimated_date_of_delivery_by_date_of_conseption'],
+                estimated_date_of_delivery_by_cycle = data['estimated_date_of_delivery_by_cycle'],
+                estimated_date_of_delivery_by_ultrasound = data['estimated_date_of_delivery_by_ultrasound'],
+                agreed_date = data['agreed_date'],
+                protocol_last_updated = data['protocol_last_updated'],
+                exclusion_of_pregnancy_statement = data['exclusion_of_pregnancy_statement']
+            )
+            db.session.add(entry)
+            db.session.commit()
+            return jsonify({'success':True,'message':'pregnancy details Added successfully'})
+        else:
+            return jsonify({'success':False,'message':'Not Authorised'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'Request misses token/json data'}), 400
 
 
+# Api for Get past history of PAtient BY PAtient Id
+@app.route('/api/getPregnancyRecordForPatient',methods=['GET'])
+def getPregnancyRecordForPatient():
+    try:
+        token=request.headers['token']
+        value = jwt.decode(token, options={"verify_signature": False})
+        res = Patient_details.query.filter_by(email=value['email'], password=value['password']).first()
+        if res:
+            result = db.session.query(Pregnancy).filter(Pregnancy.patient_uid==res.id).all()
+            output=[]     
+            for value in result:
+                pat = {}
+                pat['patient_id']=value.patient_uid
+                pat['pregnancy_status']=value.pregnancy_status
+                pat['pregnancy_outcome']=value.pregnancy_outcome
+                pat['estimated_date_of_delivery_by_date_of_conseption']=value.estimated_date_of_delivery_by_date_of_conseption
+                pat['estimated_date_of_delivery_by_cycle']=value.estimated_date_of_delivery_by_cycle
+                pat['estimated_date_of_delivery_by_ultrasound']=value.estimated_date_of_delivery_by_ultrasound
+                pat['agreed_date']=value.agreed_date
+                pat['protocol_last_updated']=value.protocol_last_updated
+                pat['exclusion_of_pregnancy_statement']=value.exclusion_of_pregnancy_statement
+                output.append(pat)
+                print(output)
+            if output:    
+                return jsonify({"history":output})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'}) 
+        else:
+            return jsonify({'success':False,'message':'invalid email/password'}), 404       
+    except:
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400      
+    
+
+# Api for Get past history of PAtient BY Doctor 
+@app.route('/api/getPregnancyRecordForDoctor',methods=['GET'])
+def getPregnancyRecordForDoctor():
+    try:
+        token=request.headers['token']
+        value = jwt.decode(token, options={"verify_signature": False})
+        res = doctor_details.query.filter_by(email=value['email'], password=value['password']).first()
+        if res:
+            result = db.session.query(Pregnancy).filter(Pregnancy.patient_id==res.id).all()
+            output=[]     
+            for value in result:
+                pat = {}
+                pat['patient_id']=value.patient_id
+                pat['pregnancy_status']=value.pregnancy_status
+                pat['pregnancy_outcome']=value.pregnancy_outcome
+                pat['estimated_date_of_delivery_by_date_of_conseption']=value.estimated_date_of_delivery_by_date_of_conseption
+                pat['estimated_date_of_delivery_by_cycle']=value.estimated_date_of_delivery_by_cycle
+                pat['estimated_date_of_delivery_by_ultrasound']=value.estimated_date_of_delivery_by_ultrasound
+                pat['agreed_date']=value.agreed_date
+                pat['protocol_last_updated']=value.protocol_last_updated
+                pat['exclusion_of_pregnancy_statement']=value.exclusion_of_pregnancy_statement
+                output.append(pat)
+                print(output)
+            if output:    
+                return jsonify({"history":output})
+            else:
+                return jsonify({'success':False,'message':'doctor_id is not present'}) 
+        else:
+            return jsonify({'success':False,'message':'invalid email/password'}), 404       
+    except:
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400      
+
+
+# API to add History of procedure
+@app.route('/api/addHistoryOfProcedure',methods=['POST'])
+def historyOfProcedure():
+    try:
+        token = request.headers['token']
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        admin_check= Admin_Login.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if admin_check:
+            data=request.get_json()
+            p_id = db.session.query(history_of_procedures,Procedure).filter(history_of_procedures.patient_uid==data['Hist_patient_uid'],Procedure.patient_uid==data['patient_uid']).first()
+            if not p_id:
+                entry = history_of_procedures(
+                    patient_uid=data['Hist_patient_uid'],
+                    absence_of_info_absence_statement = data['absence_of_info_absence_statement'],
+                    absence_of_info_protocol_last_updated = data['absence_of_info_protocol_last_updated'],
+                    global_exclusion_of_procedures = data['global_exclusion_of_procedures']
+                )
+                db.session.add(entry)
+                entry1=Procedure(
+                    patient_uid=data['patient_uid'],
+                    procedure_name = data['procedure_name'],
+                    body_site = data['body_site']
+                )
+                db.session.add(entry1)
+                db.session.commit()
+                return jsonify({'success':True,'message':'history of procedure added successfully'})
+            else:
+                return jsonify({'success':False,'message':'history already present'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'Request misses token/json data'}), 400
+
+
+
+# GET API FOR Historyofprocedure for Doctor
+@app.route('/api/getHistoryOfProcedureforDoctor',methods=['GET'])
+def getHistoryOfProcedureForDoctor():
+    try:
+        token = request.headers['token']
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        doctor_check= doctor_details.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if doctor_check:
+            all_data=request.get_json()
+            patient_uid = all_data['patient_uid']
+            result1 = db.session.query(history_of_procedures).filter(history_of_procedures.patient_uid==patient_uid).all()
+            result2 = db.session.query(Procedure).filter(Procedure.patient_uid==patient_uid).all()
+            output=[]     
+            for value in result1:
+                pat = {}
+                pat['Hist_patient_uid']=value.patient_uid
+                pat['absence_of_info_absence_statement']=value.absence_of_info_absence_statement
+                pat['absence_of_info_protocol_last_updated']=value.absence_of_info_protocol_last_updated
+                pat['global_exclusion_of_procedures']=value.global_exclusion_of_procedures
+                output.append(pat)
+            for value in result2:  
+                pat={}  
+                pat['patient_uid']=value.patient_uid
+                pat['procedure_name']=value.procedure_name
+                pat['body_site']=value.body_site
+                output.append(pat)
+                
+            if output:    
+                return jsonify({"history":output})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'})
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, Not a Doctor'}), 404
+
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400     
+
+
+# GET API FOR Historyofprocedure for Patient
+@app.route('/api/getHistoryOfProcedureforPatient',methods=['GET'])
+def getHistoryOfProcedureForPatient():
+    try:
+        token = request.headers['token']
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        patient_check= Patient_details.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if patient_check:
+            all_data=request.get_json()
+            patient_uid = all_data['patient_uid']
+            result1 = db.session.query(history_of_procedures).filter(history_of_procedures.patient_uid==patient_uid).all()
+            result2 = db.session.query(Procedure).filter(Procedure.patient_uid==patient_uid).all()
+            output=[]     
+            for value in result1:
+                pat = {}
+                pat['Hist_patient_uid']=value.patient_uid
+                pat['absence_of_info_absence_statement']=value.absence_of_info_absence_statement
+                pat['absence_of_info_protocol_last_updated']=value.absence_of_info_protocol_last_updated
+                pat['global_exclusion_of_procedures']=value.global_exclusion_of_procedures
+                output.append(pat)
+            for value in result2:  
+                pat={}  
+                pat['patient_uid']=value.patient_uid
+                pat['procedure_name']=value.procedure_name
+                pat['body_site']=value.body_site
+                output.append(pat)
+                
+            if output:    
+                return jsonify({"history":output})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'})
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, Not a Patient'}), 404
+
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400
+
+# POST for add immunization by Admin
+@app.route('/api/addImmunizations',methods=['POST'])
+def addImmunizations():
+    try:
+        token = request.headers['token']
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        admin_check= Admin_Login.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if admin_check:
+            data=request.get_json()
+            p_id = db.session.query(Immunizations,Immunization).filter(Immunizations.patient_uid==data['patient_id'],Immunization.patient_uid==data['patient_id']).first()
+            if not p_id:
+                entry = Immunizations(
+                    patient_uid=data['patient_id'],
+                    absence_of_info_absence_statement = data['absence_of_info_absence_statement'],
+                    absence_of_info_protocol_last_updated = data['absence_of_info_protocol_last_updated']
+                )
+                db.session.add(entry)
+                entry1=Immunization(
+                    patient_uid=data['patient_uid'],
+                    administration_details_route = data['administration_details_route'],
+                    administration_details_target_site = data['administration_details_target_site'],
+                    sequence_number = data['sequence_number']
+                )
+                db.session.add(entry1)
+                db.session.commit()
+                return jsonify({'success':True,'message':'Immunizations added successfully'})
+            else:
+                return jsonify({'success':False,'message':'Already present'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'Request misses token/json data'}), 400
+    
+
+# GET API FOR Immunizations for Patient
+@app.route('/api/getImmunizationsForPatient',methods=['GET'])
+def getImmunizationsForPatient():
+    try:
+        token = request.headers['token']
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        patient_check= Patient_details.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if patient_check:
+            all_data=request.get_json()
+            patient_uid = all_data['patient_uid']
+            result1 = db.session.query(Immunizations).filter(Immunizations.patient_uid==patient_uid).all()
+            result2 = db.session.query(Immunization).filter(Immunization.patient_uid==patient_uid).all()
+            output=[]   
+            for value in result1:
+                pat = {}
+                pat['patient_uid']=value.patient_uid
+                pat['absence_of_info_absence_statement']=value.absence_of_info_absence_statement
+                pat['absence_of_info_protocol_last_updated']=value.absence_of_info_protocol_last_updated
+                output.append(pat)
+            for value in result2:  
+                pat={}  
+                pat['patient_uid']=value.patient_uid
+                pat['administration_details_route']=value.administration_details_route
+                pat['administration_details_target_site']=value.administration_details_target_site
+                pat['sequence_number']=value.sequence_number
+                output.append(pat)
+                
+            if output:    
+                return jsonify({"history":output})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'})
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, Not a Patient'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400
+
+# GET API FOR Immunizations for Doctor
+@app.route('/api/getImmunizationsForDoctor',methods=['GET'])
+def getImmunizationsForDoctor():
+
+    try:
+        token = request.headers['token']
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        doctor_check= doctor_details.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if doctor_check:
+            all_data=request.get_json()
+            patient_uid = all_data['patient_uid']
+            result1 = db.session.query(Immunizations).filter(Immunizations.patient_uid==patient_uid).all()
+            result2 = db.session.query(Immunization).filter(Immunization.patient_uid==patient_uid).all()
+            output=[]   
+            for value in result1:
+                pat = {}
+                pat['patient_uid']=value.patient_uid
+                pat['absence_of_info_absence_statement']=value.absence_of_info_absence_statement
+                pat['absence_of_info_protocol_last_updated']=value.absence_of_info_protocol_last_updated
+                output.append(pat)
+            for value in result2:  
+                pat={}  
+                pat['patient_uid']=value.patient_uid
+                pat['administration_details_route']=value.administration_details_route
+                pat['administration_details_target_site']=value.administration_details_target_site
+                pat['sequence_number']=value.sequence_number
+                output.append(pat)
+                
+            if output:    
+                return jsonify({"history":output})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'})
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, Not a Doctor'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400
+
+# API for POST Medical Device
+@app.route('/api/addMedicalDevice',methods=['POST'])
+def addMedicalDevice():
+    try:
+        token = request.headers['token']
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        admin_check= Admin_Login.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if admin_check:
+            data=request.get_json()
+            entry = Medical_devices(
+                patient_uid=data['patient_id'],
+                device_name = data['device_name'],
+                body_site = data['body_site'],
+                type = data['type'],
+                description = data['description'],
+                UDI = data['UDI'],
+                manufacturer = data['manufacturer'],
+                date_of_manufacture = data['date_of_manufacture'],
+                serial_number = data['serial_number'],
+                catalogue_number = data['catalogue_number'],
+                model_number = data['model_number'],
+                batch_number = data['batch_number'],
+                software_version = data['software_version'],
+                date_of_expiry = data['date_of_expiry'],
+                other_identifier = data['other_identifier'],
+                comment = data['comment']
+
+            )
+            db.session.add(entry)
+            db.session.commit()
+            return jsonify({'success':True,'message':'Medical Devices Added successfully'})
+        else:
+            return jsonify({'success':False,'message':'Not Authorised'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'Request misses token/json data'}), 400
+
+
+# Api for Get MedicalDevice For Patient 
+@app.route('/api/getMedicalDeviceForPatient',methods=['GET'])
+def getMedicalDeviceForPatient():
+    try:
+        token=request.headers['token']
+        value = jwt.decode(token, options={"verify_signature": False})
+        res = Patient_details.query.filter_by(email=value['email'], password=value['password']).first()
+        if res:
+            result = db.session.query(Medical_devices).filter(Medical_devices.patient_uid==res.id).all()
+            output=[]   
+            for value in result:
+                pat = {}
+                pat['patient_id']=value.patient_uid
+                pat['device_name']=value.device_name
+                pat['body_site']=value.body_site
+                pat['type']=value.type
+                pat['description']=value.description
+                pat['UDI']=value.UDI
+                pat['manufacturer']=value.manufacturer
+                pat['date_of_manufacture']=value.date_of_manufacture
+                pat['serial_number']=value.serial_number
+                pat['catalogue_number']=value.catalogue_number
+                pat['model_number']=value.model_number
+                pat['batch_number']=value.batch_number
+                pat['software_version']=value.software_version
+                pat['date_of_expiry']=value.date_of_expiry
+                pat['other_identifier']=value.other_identifier
+                pat['comment']=value.comment
+                output.append(pat)
+                print(output)
+            if output:    
+                return jsonify({"history":output})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'}) 
+        else:
+            return jsonify({'success':False,'message':'invalid email/password'}), 404       
+    except:
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400      
+
+# Api for Get MedicalDevice For Doctor 
+@app.route('/api/getMedicalDeviceForDoctor',methods=['GET'])
+def getMedicalDeviceForDoctor():
+    try:
+        token=request.headers['token']
+        value = jwt.decode(token, options={"verify_signature": False})
+        res = doctor_details.query.filter_by(email=value['email'], password=value['password']).first()
+        if res:
+            result = db.session.query(Medical_devices).filter(Medical_devices.patient_uid==res.id).all()
+            output=[]   
+            for value in result:
+                pat = {}
+                pat['patient_id']=value.patient_uid
+                pat['device_name']=value.device_name
+                pat['body_site']=value.body_site
+                pat['type']=value.type
+                pat['description']=value.description
+                pat['UDI']=value.UDI
+                pat['manufacturer']=value.manufacturer
+                pat['date_of_manufacture']=value.date_of_manufacture
+                pat['serial_number']=value.serial_number
+                pat['catalogue_number']=value.catalogue_number
+                pat['model_number']=value.model_number
+                pat['batch_number']=value.batch_number
+                pat['software_version']=value.software_version
+                pat['date_of_expiry']=value.date_of_expiry
+                pat['other_identifier']=value.other_identifier
+                pat['comment']=value.comment
+                output.append(pat)
+                print(output)
+            if output:    
+                return jsonify({"history":output})
+            else:
+                return jsonify({'success':False,'message':'Doctor Id is not present'}) 
+        else:
+            return jsonify({'success':False,'message':'invalid email/password'}), 404       
+    except:
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400      
+
+#prashast
+#apis for allergies
+#add allergy
+@app.route('/api/add_allergies_and_intolerances', methods=['POST'])
+def add_allergies_and_intolerances():
+    try:
+        token=request.headers['token']
+        value = jwt.decode(token, options={"verify_signature": False})
+        admin = Admin_Login.query.filter_by(email=value['email'], password=value['password']).first()
+        if admin:
+            data = request.get_json()
+            result = Patient_details.query.filter_by(id = data['patient_id']).first()
+            if result:
+                result_allergies = allergies_and_intolerances.query.filter_by(patient_id = data['patient_id']).first()
+                if result_allergies:
+                    result_allergies.global_exclusion_of_adverse_reactions = data['global_exclusion_of_adverse_reactions']
+                    result_allergies.absence_of_information_statement = data['absence_of_information_statement']
+                    result_allergies.absence_of_information_protocol_last_updated = data['absence_of_information_protocol_last_updated']
+                else:
+                    entry_allergies = allergies_and_intolerances(patient_id = data['patient_id'], global_exclusion_of_adverse_reactions = data['global_exclusion_of_adverse_reactions'], absence_of_information_statement = data['absence_of_information_statement'], absence_of_information_protocol_last_updated = data['absence_of_information_protocol_last_updated'])
+                    db.session.add(entry_allergies)
+                entry_allergy = Allergy(patient_id=data['patient_id'], substance=data['substance'], verification_status=data['verification_status'], critically=data['critically'], type=data['type'], comment=data['comment'], reaction_manifestation = data['reaction_manifestation'], onset = data['onset'], severity = data['severity'], protocol_last_updated = data['protocol_last_updated'])
+                db.session.add(entry_allergy)
+                db.session.commit()
+                return jsonify({'success':True, 'message':'data added'}), 200
+            else:
+                return jsonify({'success':False,'message':'patient with this id doesent exist'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not Admin'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+#get all allergies
+    #for doctor
+@app.route('/api/get_all_allergies_and_intolerances_for_doctor', methods=['GET'])
+def getallAllergiesForDoctor():
+    try:
+        token = request.headers['token']    #doctor token
+        value = jwt.decode(token, options={"verify_signature": False})
+        email = value["email"]
+        password = value["password"]
+        
+        doctor = doctor_details.query.filter_by(email=email,password=password).first()
+        if doctor:
+            data = request.get_json()
+            patient_id = data['patient_id']
+            result = allergies_and_intolerances.query.filter_by(patient_id = patient_id).first()
+            if result:
+                output = {}
+                output['global_exclusion_of_adverse_reactions'] = result.global_exclusion_of_adverse_reactions
+                output['absence_of_information_statement'] = result.absence_of_information_statement
+                output['absence_of_information_protocol_last_updated'] = result.absence_of_information_protocol_last_updated
+                
+                allergy_list = []
+                allergies = Allergy.query.filter_by(patient_id = patient_id).all()
+                for allergy in allergies:
+                    obj = {}
+                    obj['substance']= allergy.substance
+                    obj['allergy_id']= allergy.id
+                    allergy_list.append(obj)
+                output['allergy_list'] = allergy_list
+
+                return jsonify({'all_allergies_and_intolerances':output}), 200
+            else:
+                return jsonify({'success':False,'message':'no record for this id'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not a Doctor'}), 404
+
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+
+#get all allergies
+    #for patient
+@app.route('/api/get_all_allergies_and_intolerances_for_patient', methods=['GET'])
+def getallAllergiesForPatient():
+    try:
+        #patient verification
+        token = request.header['token']
+        value = jwt.decode(token, options={"verify_signature": False})
+        email = value["email"]
+        password = value["password"]
+
+        patient = Patient_details.query.filter_by(email=email,password=password).first()
+        if patient:
+            result = allergies_and_intolerances.query.filter_by(patient_id = patient.id).first()
+            if result:
+                output = {}
+                output['global_exclusion_of_adverse_reactions'] = result.global_exclusion_of_adverse_reactions
+                output['absence_of_information_statement'] = result.absence_of_information_statement
+                output['absence_of_information_protocol_last_updated'] = result.absence_of_information_protocol_last_updated
+                
+                allergy_list = []
+                allergies = Allergy.query.filter_by(patient_id = patient.id).all()
+                for allergy in allergies:
+                    obj = {}
+                    obj['substance']= allergy.substance
+                    obj['allergy_id']= allergy.id
+                    allergy_list.append(obj)
+                output['allergy_list'] = allergy_list
+
+                return jsonify({'all_allergies_and_intolerances':output}), 200
+            else:
+                return jsonify({'success':False,'message':'no record for this id'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not a Patient'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+
+#get allergy by id
+    #for doctor
+@app.route('/api/get_allergy_by_id_for_doctor', methods = ['GET'])
+def getAllergyByIdForDoctor():
+    try:
+        token = request.headers['token']    #doctor token
+        value = jwt.decode(token, options={"verify_signature": False})
+        email = value["email"]
+        password = value["password"]
+        
+        doctor = doctor_details.query.filter_by(email=email,password=password).first()
+        if doctor:
+            data = request.get_json()
+            allergy_id = data['allergy_id']
+
+            result = Allergy.query.filter_by(id = allergy_id).first()
+            if result:
+                output = {}
+                output['substance'] = result.substance
+                output['verification_status'] = result.verification_status
+                output['critically'] = result.critically
+                output['type'] = result.type
+                output['comment'] = result.comment
+                output['reaction_manifestation'] = result.reaction_manifestation
+                output['onset'] = result.onset
+                output['severity'] = result.severity
+                output['protocol_last_updated'] = result.protocol_last_updated
+
+                return jsonify({'allergy':output}), 200
+            else:
+                return jsonify({'success':False, "message":"Allergy does not exist for patient"}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+
+#get allergy by id
+    #for patient
+@app.route('/api/get_allergy_by_id_for_patient', methods = ['GET'])
+def getAllergyByIdForPatient():
+    try:
+        token = request.headers['token']    #patient token
+        value = jwt.decode(token, options={"verify_signature": False})
+        email = value["email"]
+        password = value["password"]
+        
+        patient = Patient_details.query.filter_by(email=email,password=password).first()
+        if patient:
+            data = request.get_json()
+            allergy_id = data['allergy_id']
+
+            result = Allergy.query.filter_by(id = allergy_id, patient_id=patient.id).first()
+            if result:
+                output = {}
+                output['substance'] = result.substance
+                output['verification_status'] = result.verification_status
+                output['critically'] = result.critically
+                output['type'] = result.type
+                output['comment'] = result.comment
+                output['reaction_manifestation'] = result.reaction_manifestation
+                output['onset'] = result.onset
+                output['severity'] = result.severity
+                output['protocol_last_updated'] = result.protocol_last_updated
+
+                return jsonify({'allergy':output}), 200
+            else:
+                return jsonify({'success':False, "message":"This Allergy does not exist for this patient"}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not a Patient'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+
+#APIs for vital signs
+#add/update vital signs
+@app.route('/api/add_vital_signs', methods=['POST'])
+def add_vital_signs():
+    try:
+        #Admin verification
+        token=request.headers['token']
+        value = jwt.decode(token, options={"verify_signature": False})
+        admin = Admin_Login.query.filter_by(email=value['email'], password=value['password']).first()
+        if admin:
+            data = request.get_json()
+            result = Patient_details.query.filter_by(id = data['patient_id']).first()
+            if result:
+                result_vitals = vital_signs.query.filter_by(patient_id= data['patient_id']).first()
+                if result_vitals:
+                    result_vitals.body_weight = data['body_weight']
+                    result_vitals.body_weight_unit = data['body_weight_unit']
+                    result_vitals.height = data['height']
+                    result_vitals.height_unit = data['height_unit']
+                    result_vitals.respiration_rate = data['respiration_rate']
+                    result_vitals.pulse_rate = data['pulse_rate']
+                    result_vitals.body_temperature = data['body_temperature']
+                    result_vitals.body_temperature_unit = data['body_temperature_unit']
+                    result_vitals.head_circumference = data['head_circumference']
+                    result_vitals.head_circumference_unit = data['head_circumference_unit']
+                    result_vitals.pulse_oximetry = data['pulse_oximetry']
+                    result_vitals.body_mass_index = data['body_mass_index']
+                    result_vitals.body_mass_index_unit = data['body_mass_index_unit']
+                    result_vitals.blood_pressure_systolic = data['blood_pressure_systolic']
+                    result_vitals.blood_pressure_diastolic = data['blood_pressure_diastolic']
+                else:
+                    entry = vital_signs(patient_id = data['patient_id'], body_weight = data['body_weight'], body_weight_unit = data['body_weight_unit'], height = data['height'],height_unit = data['height_unit'],respiration_rate = data['respiration_rate'],pulse_rate = data['pulse_rate'],body_temperature = data['body_temperature'],body_temperature_unit = data['body_temperature_unit'],head_circumference = data['head_circumference'],head_circumference_unit = data['head_circumference_unit'],pulse_oximetry = data['pulse_oximetry'],body_mass_index = data['body_mass_index'],body_mass_index_unit = data['body_mass_index_unit'],blood_pressure_systolic = data['blood_pressure_systolic'],blood_pressure_diastolic = data['blood_pressure_diastolic'])
+                    db.session.add(entry)
+                db.session.commit()
+                return jsonify({'success':True, 'message':'data added'}), 200
+            else:
+                return jsonify({'success':False,'message':'patient with this id doesent exist'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not Admin'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+#get vital signs
+    #for doctor
+@app.route('/api/get_vital_signs_for_doctor', methods=['GET'])
+def get_vital_signs_for_doctor():
+    try:
+        token = request.headers['token']    #doctor token
+        value = jwt.decode(token, options={"verify_signature": False})
+        email = value["email"]
+        password = value["password"]
+        
+        doctor = doctor_details.query.filter_by(email=email,password=password).first()
+        if doctor:
+            data = request.get_json()
+            p_id = data['patient_id']
+            patient = Patient_details.query.filter_by(id = p_id).first()
+            if patient:
+                result_vitals = vital_signs.query.filter_by(patient_id = patient.id).first()
+                if result_vitals:
+                    obj = {}
+                    obj['body_weight']=result_vitals.body_weight 
+                    obj['body_weight_unit']=result_vitals.body_weight_unit 
+                    obj['height']=result_vitals.height
+                    obj['height_unit']=result_vitals.height_unit 
+                    obj['respiration_rate']=result_vitals.respiration_rate 
+                    obj['pulse_rate']=result_vitals.pulse_rate 
+                    obj['body_temperature']=result_vitals.body_temperature 
+                    obj['body_temperature_unit']=result_vitals.body_temperature_unit 
+                    obj['head_circumference']=result_vitals.head_circumference 
+                    obj['head_circumference_unit']=result_vitals.head_circumference_unit 
+                    obj['pulse_oximetry']=result_vitals.pulse_oximetry
+                    obj['body_mass_index']=result_vitals.body_mass_index 
+                    obj['body_mass_index_unit']=result_vitals.body_mass_index_unit 
+                    obj['blood_pressure_systolic']=result_vitals.blood_pressure_systolic 
+                    obj['blood_pressure_diastolic']=result_vitals.blood_pressure_diastolic
+                    return jsonify({'data':obj}), 200
+                else:
+                    return jsonify({'success':False,'message':'no vital signs recorded for patient id'}), 404
+            else:
+                return jsonify({'success':False,'message':'wrong patient id'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not a doctor'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+
+#get vital signs
+    #for patient
+@app.route('/api/get_vital_signs', methods=['GET'])
+def get_vital_signs():
+    try:
+        token = request.headers['token']    #patient token
+        value = jwt.decode(token, options={"verify_signature": False})
+        email = value["email"]
+        password = value["password"]
+        
+        patient = Patient_details.query.filter_by(email=email,password=password).first()
+        if patient:
+            result_vitals = vital_signs.query.filter_by(patient_id = patient.id).first()
+            if result_vitals:
+                obj = {}
+                obj['body_weight']=result_vitals.body_weight 
+                obj['body_weight_unit']=result_vitals.body_weight_unit 
+                obj['height']=result_vitals.height
+                obj['height_unit']=result_vitals.height_unit 
+                obj['respiration_rate']=result_vitals.respiration_rate 
+                obj['pulse_rate']=result_vitals.pulse_rate 
+                obj['body_temperature']=result_vitals.body_temperature 
+                obj['body_temperature_unit']=result_vitals.body_temperature_unit 
+                obj['head_circumference']=result_vitals.head_circumference 
+                obj['head_circumference_unit']=result_vitals.head_circumference_unit 
+                obj['pulse_oximetry']=result_vitals.pulse_oximetry
+                obj['body_mass_index']=result_vitals.body_mass_index 
+                obj['body_mass_index_unit']=result_vitals.body_mass_index_unit 
+                obj['blood_pressure_systolic']=result_vitals.blood_pressure_systolic 
+                obj['blood_pressure_diastolic']=result_vitals.blood_pressure_diastolic
+                return jsonify({'data':obj}), 200
+            else:
+                return jsonify({'success':False,'message':'no vital signs recorded'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not a patient'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+#APIs for dignostics
+#add dignosis
+@app.route('/api/add_dignostics_results', methods=['POST'])
+def add_dignostics_results():
+    try:
+        #Admin verification
+        token=request.headers['token']
+        value = jwt.decode(token, options={"verify_signature": False})
+        admin = Admin_Login.query.filter_by(email=value['email'], password=value['password']).first()
+        if admin:
+            data = request.get_json()
+            patient = Patient_details.query.filter_by(id = data['patient_id']).first()
+            if patient:
+                #diagnostic_lab_test_result
+                entry = dignostic_test_result(
+                    patient_id = data['patient_id'],
+                    lab_test_name = data['lab_test_name'],
+                    specimen_type = data['specimen_type'],
+                    specimen_method = data['specimen_method'],
+                    specimen_bodysite = data['specimen_bodysite'],
+                    diagnostic_service_category = data['diagnostic_service_category'],
+                    laboratory_analyte_result_analyte_name = data['laboratory_analyte_result_analyte_name'],
+                    interpretation = data['interpretation'],
+                    multimedia_source_resource_name = data['multimedia_source_resource_name'],
+                    multimedia_source_content = data['multimedia_source_content'],
+                    imaging_test_name = data['imaging_test_name'],
+                    modality = data['modality'],
+                    anatomical_site = data['anatomical_site'],
+                    imaging_finding_name = data['imaging_finding_name'],
+                    anatomical_location = data['anatomical_location'],
+                    presence = data['presence'],
+                    description = data['description'],
+                    comparison_to_previous = data['comparison_to_previous'],
+                    comment = data['comment'],
+                    comparison_with_previous = data['comparison_with_previous'],
+                    conclusion = data['conclusion'],
+                    imaging_differential_diagnosis = data['imaging_differential_diagnosis'],
+                    imaging_diagnosis = data['imaging_diagnosis'],
+                    multimedia_resource_name = data['multimedia_resource_name'],
+                    multimedia_content = data['multimedia_content'],
+                    technique = data['technique'],
+                    imaging_quality = data['imaging_quality'],
+                    examination_requester_order_identifier = data['examination_requester_order_identifier'],
+                    examination_requested_name = data['examination_requested_name'],
+                    examination_receiver_order_identifier = data['examination_receiver_order_identifier'],
+                    dicom_study_identifier = data['dicom_study_identifier'],
+                    examination_report_identifier = data['examination_report_identifier'],
+                    image_identifier = data['image_identifier'],
+                    dicom_series_identifier = data['dicom_series_identifier'],
+                    view = data['view'],
+                    position = data['position'],
+                    image_datetime = data['image_datetime'],
+                    image = data['image']
+                )
+                db.session.add(entry)
+                db.session.commit()
+                return jsonify({'success':True, 'message':'data added'}), 200    
+            else:
+                return jsonify({'success':False,'message':'patient with this id doesent exist'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not Admin'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+
+#get all dignosis
+    #for doctor
+@app.route('/api/get_dignosis_results_for_doctor', methods=['GET'])
+def getDignosisResultsForDoctor():
+    try:
+        token = request.headers['token']    #doctor token
+        value = jwt.decode(token, options={"verify_signature": False})
+        email = value["email"]
+        password = value["password"]
+        
+        doctor = doctor_details.query.filter_by(email=email,password=password).first()
+        if doctor:
+            data = request.get_json()
+            patient_id = data['patient_id']
+            patient = Patient_details.query.filter_by(id = patient_id).first()
+            if patient:
+                results = dignostic_test_result.query.filter_by(patient_id=patient.id).all()
+                output =[]
+                for result in results:
+                    obj ={}
+                    obj['dignostic_id']= result.id
+                    obj['lab_test_name'] = result.lab_test_name
+                    obj['imaging_test_name'] = result.imaging_test_name
+                    output.append(obj)
+                return jsonify({'dignostic_test_result':output}), 200
+            else:
+                return jsonify({'success':False,'message':'wrong patient id'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not a doctor'}), 404
+
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+
+#get all dignosis
+    #for patient
+@app.route('/api/get_dignosis_results_for_patient', methods=['GET'])
+def getDignosisResultsForPatient():
+    try:
+        token = request.headers['token']    #patient token
+        value = jwt.decode(token, options={"verify_signature": False})
+        email = value["email"]
+        password = value["password"]
+        
+        patient = Patient_details.query.filter_by(email=email,password=password).first()
+        if patient:
+            results = dignostic_test_result.query.filter_by(patient_id=patient.id).all()
+            output =[]
+            for result in results:
+                obj ={}
+                obj['dignosis_id']= result.id
+                obj['lab_test_name'] = result.lab_test_name
+                obj['imaging_test_name'] = result.imaging_test_name
+                output.append(obj)
+            return jsonify({'dignostic_test_result':output}), 200
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not a patient'}), 404
+
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data/token'}),400 
+
+#get dignostics_by_id
+    #for doctor
+@app.route('/api/get_dognostics_by_id_for_doctor', methods=['GET'])
+def getDignosticsByIdForDoctor():
+    try:
+        token = request.headers['token']    #doctor token
+        value = jwt.decode(token, options={"verify_signature": False})
+        email = value["email"]
+        password = value["password"]
+        
+        doctor = doctor_details.query.filter_by(email=email,password=password).first()
+        if doctor:
+            data = request.get_json()
+            dignostic_id = data['dignostic_id']
+            result = dignostic_test_result.query.filter_by(id = dignostic_id).first()
+            if result:
+                obj = {}
+                obj['lab_test_name'] = result.test_name
+                obj['specimen_type'] = result.specimen_type
+                obj['specimen_method'] = result.specimen_method
+                obj['specimen_bodysite'] = result.specimen_bodysite
+                obj['diagnostic_service_category'] = result.diagnostic_service_category
+                obj['laboratory_analyte_result_analyte_name'] = result.laboratory_analyte_result_analyte_name
+                obj['interpretation'] = result.interpretation
+                obj['multimedia_source_resource_name'] = result.multimedia_source_resource_name
+                obj['multimedia_source_content'] = result.multimedia_source_content
+                obj['imaging_test_name'] = result.test_name
+                obj['modality'] = result.modality
+                obj['anatomical_site'] = result.anatomical_site
+                obj['imaging_finding_name'] = result.imaging_finding_name
+                obj['anatomical_location'] = result.anatomical_location
+                obj['presence'] = result.presence
+                obj['description'] = result.description
+                obj['comparison_to_previous'] = result.comparison_to_previous
+                obj['comment'] = result.comment
+                obj['comparison_with_previous'] = result.comparison_with_previous
+                obj['conclusion'] = result.conclusion
+                obj['imaging_differential_diagnosis'] = result.imaging_differential_diagnosis
+                obj['imaging_diagnosis'] = result.imaging_diagnosis
+                obj['multimedia_resource_name'] = result.multimedia_resource_name
+                obj['multimedia_content'] = result.multimedia_content
+                obj['technique'] = result.technique
+                obj['imaging_quality'] = result.imaging_quality
+                obj['examination_requester_order_identifier'] = result.examination_requester_order_identifier
+                obj['examination_requested_name'] = result.examination_requested_name
+                obj['examination_receiver_order_identifier'] = result.examination_receiver_order_identifier
+                obj['dicom_study_identifier'] = result.dicom_study_identifier
+                obj['examination_report_identifier'] = result.examination_report_identifier
+                obj['image_identifier'] = result.image_identifier
+                obj['dicom_series_identifier'] = result.dicom_series_identifier
+                obj['view'] = result.view
+                obj['position'] = result.position
+                obj['image_datetime'] = result.image_datetime
+                obj['image'] = result.image
+                return jsonify({'dignostic':obj})
+            else:
+                return jsonify({'success':False,'message':'Wrong dignostic id'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not a doctor'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data/token'}),400 
+
+
+#get dignostics_by_id
+    #for patient
+@app.route('/api/get_dognostics_by_id_for_patient', methods=['GET'])
+def getDignosticsByIdForPatient():
+    try:
+        token = request.headers['token']    #doctor token
+        value = jwt.decode(token, options={"verify_signature": False})
+        email = value["email"]
+        password = value["password"]
+        
+        patient = Patient_details.query.filter_by(email=email,password=password).first()
+        if patient:
+            data = request.get_json()
+            dignostic_id = data['dignostic_id']
+            result = dignostic_test_result.query.filter_by(id = dignostic_id, patient_id = patient.id).first()
+            if result:
+                obj = {}
+                obj['lab_test_name'] = result.test_name
+                obj['specimen_type'] = result.specimen_type
+                obj['specimen_method'] = result.specimen_method
+                obj['specimen_bodysite'] = result.specimen_bodysite
+                obj['diagnostic_service_category'] = result.diagnostic_service_category
+                obj['laboratory_analyte_result_analyte_name'] = result.laboratory_analyte_result_analyte_name
+                obj['interpretation'] = result.interpretation
+                obj['multimedia_source_resource_name'] = result.multimedia_source_resource_name
+                obj['multimedia_source_content'] = result.multimedia_source_content
+                obj['imaging_test_name'] = result.test_name
+                obj['modality'] = result.modality
+                obj['anatomical_site'] = result.anatomical_site
+                obj['imaging_finding_name'] = result.imaging_finding_name
+                obj['anatomical_location'] = result.anatomical_location
+                obj['presence'] = result.presence
+                obj['description'] = result.description
+                obj['comparison_to_previous'] = result.comparison_to_previous
+                obj['comment'] = result.comment
+                obj['comparison_with_previous'] = result.comparison_with_previous
+                obj['conclusion'] = result.conclusion
+                obj['imaging_differential_diagnosis'] = result.imaging_differential_diagnosis
+                obj['imaging_diagnosis'] = result.imaging_diagnosis
+                obj['multimedia_resource_name'] = result.multimedia_resource_name
+                obj['multimedia_content'] = result.multimedia_content
+                obj['technique'] = result.technique
+                obj['imaging_quality'] = result.imaging_quality
+                obj['examination_requester_order_identifier'] = result.examination_requester_order_identifier
+                obj['examination_requested_name'] = result.examination_requested_name
+                obj['examination_receiver_order_identifier'] = result.examination_receiver_order_identifier
+                obj['dicom_study_identifier'] = result.dicom_study_identifier
+                obj['examination_report_identifier'] = result.examination_report_identifier
+                obj['image_identifier'] = result.image_identifier
+                obj['dicom_series_identifier'] = result.dicom_series_identifier
+                obj['view'] = result.view
+                obj['position'] = result.position
+                obj['image_datetime'] = result.image_datetime
+                obj['image'] = result.image
+                return jsonify({'dignostic':obj})
+            else:
+                return jsonify({'success':False,'message':'This dignostic result is not available for this patient'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not a doctor'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data/token'}),400 
+
+
+@app.route('/api/getPatientForDoctor', methods=['GET'])
+def getPatientForDoctor():
+    try:
+        token = request.headers['token']    #doctor token
+        value = jwt.decode(token, options={"verify_signature": False})
+        email = value["email"]
+        password = value["password"]
+        
+        doctor = doctor_details.query.filter_by(email=email,password=password).first()
+        if doctor:
+            data = request.get_json()
+            pat_email = data['patient_email']
+            patient = Patient_details.query.filter_by(email = pat_email).first()
+            if patient:
+                return jsonify({"patient_id":patient.id})
+            else:
+                return jsonify({'success':False,'message':'Not a patient'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not a doctor'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data/token'}),400 
+        
+
+@app.route('/api/getPatientForAdmin', methods=['GET'])
+def getPatientForAdmin():
+    try:
+        token = request.headers['token']    #admin token
+        value = jwt.decode(token, options={"verify_signature": False})
+        email = value["email"]
+        password = value["password"]
+        
+        admin = Admin_Login.query.filter_by(email=email,password=password).first()
+        if admin:
+            data = request.get_json()
+            pat_email = data['patient_email']
+            patient = Patient_details.query.filter_by(email = pat_email).first()
+            if patient:
+                return jsonify({"patient_id":patient.id})
+            else:
+                return jsonify({'success':False,'message':'Not a patient'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised, not Admin'}), 404
+    except Exception as e:
+        print(e)
+        return jsonify({'success':False,'message':'not recieved JSON data/token'}),400 
+        
+        
+#Twinkle
+# Api for Get past history of Patient BY Patient Id
+@app.route('/api/getpasthistoryofpatientbypatientid',methods=['GET'])
+def getPastHistoryPatient():
+    try:
+        token=request.headers['token'] #patient token
+        value = jwt.decode(token, options={"verify_signature": False})
+        res = Patient_details.query.filter_by(email=value['email'], password=value['password']).first()
+        if res:
+            result = db.session.query(Past_history_of_illnesses).filter(Past_history_of_illnesses.patient_id==res.id).all()
+            output=[]     
+            for value in result:
+                pat = {}
+                pat['patient_uid']=value.patient_id
+                pat['problem_name']=value.problem_name
+                pat['body_site']=value.body_site
+                pat['datetime_of_onset']=value.datetime_of_onset
+                pat['severity']=value.severity
+                pat['date_of_abatebent']=value.date_of_abatebent
+                pat['active_or_inactive']=value.active_or_inactive
+                pat['resolution_phase']=value.resolution_phase
+                pat['remission_status']=value.remission_status
+                pat['occurrence']=value.occurrence
+                pat['diagnostic_certainity']=value.diagnostic_certainity
+                pat['protocol_last_updated']=value.protocol_last_updated
+                output.append(pat)
+                print(output)
+            if output:    
+                return jsonify({"history":output})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'}) 
+        else:
+            return jsonify({'success':False,'message':'invalid email/password'}), 404       
+    except:
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400      
+
+
+# Api for get past history of patient by patient id and past history id
+@app.route('/api/getpasthistoryofpatient',methods=['GET'])
+def getPastHistoryOfPatient():
+    try:
+        token=request.headers['token'] #Patient Token
+        value = jwt.decode(token, options={"verify_signature": False})
+        res = Patient_details.query.filter_by(email=value['email'], password=value['password']).first()
+        if res:
+            all_data=request.get_json()
+            past_id = all_data['past_id']
+            result = db.session.query(Past_history_of_illnesses).filter(Past_history_of_illnesses.patient_id==res.id,Past_history_of_illnesses.id==past_id)    
+            pat = {}
+            for value in result:
+                pat['patient_uid']=value.patient_id
+                pat['problem_name']=value.problem_name
+                pat['body_site']=value.body_site
+                pat['datetime_of_onset']=value.datetime_of_onset
+                pat['severity']=value.severity
+                pat['date_of_abatebent']=value.date_of_abatebent
+                pat['active_or_inactive']=value.active_or_inactive
+                pat['resolution_phase']=value.resolution_phase
+                pat['remission_status']=value.remission_status
+                pat['occurrence']=value.occurrence
+                pat['diagnostic_certainity']=value.diagnostic_certainity
+                pat['protocol_last_updated']=value.protocol_last_updated    
+            if pat:    
+                return jsonify({"history":pat})
+            else:
+                return jsonify({'success':False,'message':'Past_id is not present'}) 
+        else:
+            return jsonify({'success':False,'message':'invalid email/password'}), 404       
+    except:
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400      
+
+
+
+# Api for create past history of patient
+@app.route('/api/createpasthistoryofpatient',methods=['POST'])
+def createPastHistoryOfPatient():
+    try:
+        token = request.headers['token'] #Admin Token
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        admin_check= Admin_Login.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if admin_check:
+            data=request.get_json()
+            #p_id = Past_history_of_illnesses.query.filter_by(patient_id=data['patient_uid'],problem_name=data['problem_name'],body_site=data['body_site'],datetime_of_onset=data['datetime_of_onset'],severity=data['severity'],date_of_abatebent=data['date_of_abatebent'],active_or_inactive=data['active_or_inactive'],resolution_phase=data['resolution_phase'],remission_status=data['remission_status'],occurrence=data['occurrence'],diagnostic_certainity=data['diagnostic_certainity'],protocol_last_updated=data['protocol_last_updated']).first()
+            #if not p_id:
+            entry = Past_history_of_illnesses(patient_id=data['patient_uid'],problem_name=data['problem_name'],body_site=data['body_site'],datetime_of_onset=data['datetime_of_onset'],severity=data['severity'],date_of_abatebent=data['date_of_abatebent'],active_or_inactive=data['active_or_inactive'],resolution_phase=data['resolution_phase'],remission_status=data['remission_status'],occurrence=data['occurrence'],diagnostic_certainity=data['diagnostic_certainity'],protocol_last_updated=data['protocol_last_updated'])
+            db.session.add(entry)
+            db.session.commit()
+            return jsonify({'success':True,'message':'history added successfully'})
+            # else:
+            #     return jsonify({'success':False,'message':'history already present'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised'}), 404
+    except:
+        return jsonify({'success':False,'message':'Request misses token/json data'}), 400
+        
+
+# Api gor Get prblem List of Patient
+@app.route('/api/getproblemlist',methods=['GET'])
+def getProblemList():
+    try:
+        token=request.headers['token']   #Patient Token
+        value = jwt.decode(token, options={"verify_signature": False})
+        res = Patient_details.query.filter_by(email=value['email'], password=value['password']).first()
+        if res:
+            result1 = db.session.query(Problem_list).filter(Problem_list.patient_id==res.id).all()
+            result2 = db.session.query(Problem).filter(Problem.patient_id==res.id).all()
+            output=[]     
+            for value in result1:
+                pat = {}
+                pat['patient_uid']=value.patient_id
+                pat['global_exclusion_of_adverse_reactions']=value.global_exclusion_of_adverse_reactions
+                pat['absence_of_information_statement']=value.absence_of_information_statement
+                pat['absence_of_information_protocol_last_updated']=value.absence_of_information_protocol_last_updated
+                output.append(pat)
+            for value in result2:  
+                pat={}  
+                pat['p_patient_uid']=value.patient_id
+                pat['problem_name']=value.problem_name
+                pat['body_site']=value.body_site
+                pat['datetime_of_onset']=value.datetime_of_onset
+                pat['severity']=value.severity
+                pat['date_of_abatebent']=value.date_of_abatebent
+                pat['active_or_inactive']=value.active_or_inactive
+                pat['resolution_phase']=value.resolution_phase
+                pat['remission_status']=value.resolution_phase
+                pat['occurrence']=value.occurrence
+                pat['diagnostic_certainity']=value.diagnostic_certainity
+                pat['protocol_last_updated']=value.protocol_last_updated
+                output.append(pat)
+                
+            if output:    
+                return jsonify({"history":output})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'})
+        else:
+            return jsonify({'success':False,'message':'invalid email/password'}), 404 
+    except:
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400     
+
+
+
+
+# Api for Create problem List
+@app.route('/api/problemlist',methods=['POST'])
+def problemList():
+    try:
+        token = request.headers['token']  #Admin Token
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        patient_check= Admin_Login.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if patient_check:
+            data=request.get_json()
+            # p_id = db.session.query(Problem_list,Problem).filter(Problem_list.patient_id==data['p_patient_uid'],Problem.patient_id==data['patient_uid']).first()
+            # if not p_id:
+            entry = Problem_list(patient_id=data['p_patient_uid'],global_exclusion_of_adverse_reactions=data['global_exclusion_of_adverse_reactions'],absence_of_information_statement=data['absence_of_information_statement'],absence_of_information_protocol_last_updated=data['absence_of_information_protocol_last_updated'])
+            db.session.add(entry)
+            entry1=Problem(patient_id=data['patient_uid'],problem_name=data['problem_name'],body_site=data['body_site'],datetime_of_onset=data['datetime_of_onset'],severity=data['severity'],date_of_abatebent=data['date_of_abatebent'],active_or_inactive=data['active_or_inactive'],resolution_phase=data['resolution_phase'],remission_status=data['remission_status'],occurrence=data['occurrence'],diagnostic_certainity=data['diagnostic_certainity'],protocol_last_updated=data['protocol_last_updated'])
+            db.session.add(entry1)
+            db.session.commit()
+            return jsonify({'success':True,'message':'Problem added successfully'})
+            # else:
+            #     return jsonify({'success':False,'message':'history already present'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised'}), 404
+    except:
+        return jsonify({'success':False,'message':'Request misses token/json data'}), 400
+        
+
+# Api for get advance directives
+@app.route('/api/getadvanceddirectives',methods=['GET'])
+def getAdvanceDirectives():
+    try:
+        token=request.headers['token']  #Patient Token
+        value = jwt.decode(token, options={"verify_signature": False})
+        res = Patient_details.query.filter_by(email=value['email'], password=value['password']).first()
+        if res:
+            result1 = db.session.query(Advance_care_directive).filter(Advance_care_directive.patient_id==res.id).all()
+            result2 = db.session.query(Limitation_of_treatment).filter(Limitation_of_treatment.patient_id==res.id).all()
+            output=[]     
+            for value in result1:
+                pat = {}
+                pat['a_patient_uid']=value.patient_id
+                pat['type_of_directive']=value.type_of_directive
+                pat['a_status']=value.status
+                pat['description']=value.description
+                pat['condition']=value.condition
+                pat['directive_location']=value.directive_location
+                pat['a_comment']=value.comment
+                pat['valid_period_start']=value.valid_period_start
+                pat['valid_period_end']=value.valid_period_end
+                pat['review_due_date']=value.review_due_date
+                pat['last_updated']=value.last_updated
+                pat['mandate']=value.mandate
+                output.append(pat)
+            for value in result2:  
+                pat={}  
+                pat['patient_uid']=value.patient_id
+                pat['status']=value.status
+                pat['type_of_limitation']=value.type_of_limitation
+                pat['decision']=value.decision
+                pat['qualification']=value.qualification
+                pat['rationale']=value.rationale
+                pat['patient_awareness']=value.patient_awareness
+                pat['carer_awareness']=value.carer_awareness
+                pat['comment']=value.comment
+                pat['element']=value.element
+                pat['protocol_review_date']=value.protocol_review_date
+                
+                output.append(pat)
+                
+            if output:    
+                return jsonify({"history":output})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'})
+        else:
+            return jsonify({'success':False,'message':'invalid email/password'}), 404
+    except:
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+
+
+
+# Api for create Advance directives history  
+@app.route('/api/advanceddirectives',methods=['POST'])
+def advancedDirectives():
+    try:
+        token = request.headers['token']   #Admin Token
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        patient_check= Admin_Login.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if patient_check:
+            data=request.get_json()
+            # p_id = db.session.query(Advance_care_directive,Limitation_of_treatment).filter(Advance_care_directive.patient_id==data['a_patient_uid'],Limitation_of_treatment.patient_id==data['patient_uid']).first()
+            # if not p_id:
+            entry = Advance_care_directive(patient_id=data['a_patient_uid'],type_of_directive=data['type_of_directive'],status=data['a_status'],description=data['description'],condition=data['condition'],directive_location=data['directive_location'],comment=data['a_comment'],valid_period_start=data['valid_period_start'],valid_period_end=data['valid_period_end'],review_due_date=data['review_due_date'],last_updated=data['last_updated'],mandate=data['mandate'])
+            db.session.add(entry)
+            entry1=Limitation_of_treatment(patient_id=data['patient_uid'],status=data['status'],type_of_limitation=data['type_of_limitation'],decision=data['decision'],qualification=data['qualification'],rationale=data['rationale'],patient_awareness=data['patient_awareness'],carer_awareness=data['carer_awareness'],comment=data['comment'],element=data['element'],protocol_review_date=data['protocol_review_date'])
+            db.session.add(entry1)
+            db.session.commit()
+            return jsonify({'success':True,'message':'history added successfully'})
+            # else:
+            #     return jsonify({'success':False,'message':'history already present'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised'}), 404
+    except:
+        return jsonify({'success':False,'message':'Request misses token/json data'}), 400        
+
+
+@app.route('/api/getsocialhistory',methods=['GET'])
+def getSocialHistoryPatient():
+    try:
+        token=request.headers['token']
+        value = jwt.decode(token, options={"verify_signature": False})
+        res = Patient_details.query.filter_by(email=value['email'], password=value['password']).first()
+        if res:
+            #all_data=request.get_json()
+            #patient_uid = all_data['patient_uid']
+            result1 = db.session.query(Tobacco_smoking).filter(Tobacco_smoking.patient_id==res.id).all()
+            result2 = db.session.query(Alcohol_consumption).filter(Alcohol_consumption.patient_id==res.id).all()
+            output=[]     
+            for value in result1:
+                pat = {}
+                pat['patient_id']=value.patient_uid
+                pat['status']=value.status
+            for value in result2:    
+                pat['alcohol_status']=value.status
+                pat['typical_consumption_alcohol_unit']=value.typical_consumption_alcohol_unit
+                output.append(pat)
+                #print(output)
+            if output:    
+                return jsonify({"history":output})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'}) 
+        else:
+            return jsonify({'success':False,'message':'invalid email/password'}), 404       
+    except:
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+@app.route('/api/createsocialhistoryofpatient',methods=['POST'])
+def createSocialHistoryOfPatient():
+    try:
+        token = request.headers['token']
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        admin_check= Admin_Login.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if admin_check:
+            data=request.get_json()
+            p_id = Tobacco_smoking.query.filter_by(patient_id=data['patient_id']).first()
+            p_id1 = Alcohol_consumption.query.filter_by(patient_id=data['patient_id']).first()
+            if p_id and p_id1:
+                p_id.status=data['status']
+                p_id1.alcohol_status=data['alcohol_status']
+                p_id1.typical_consumption_alcohol_unit=data['typical_consumption_alcohol_unit']
+            else:
+                entry = Tobacco_smoking(patient_uid=data['patient_id'],status=data['status'])
+                db.session.add(entry)
+                entry = Alcohol_consumption(patient_uid=data['patient_id'],alcohol_status=data['alcohol_status'],typical_consumption_alcohol_unit=data['typical_consumption_alcohol_unit'])
+                db.session.add(entry)
+                db.session.commit()
+            return jsonify({'success':True,'message':'social history added successfully'})
+            # else:
+            #     return jsonify({'success':False,'message':'history already present'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised'}), 404
+    except:
+        return jsonify({'success':False,'message':'Request misses token/json data'}), 400
+
+@app.route('/api/getplanofcareforpatient',methods=['GET'])
+def getplanofcare():
+    try:
+        token=request.headers['token']
+        value = jwt.decode(token, options={"verify_signature": False})
+        res = Patient_details.query.filter_by(email=value['email'], password=value['password']).first()
+        if res:
+            #all_data=request.get_json()
+            #patient_uid = all_data['patient_uid']
+            result1 = db.session.query(Care_plan).filter(Care_plan.patient_uid==res.id).all()
+            result2 = db.session.query(Service_request).filter(Service_request.patient_uid==res.id).all()
+            pat = {}   
+            for value in result1:
+                pat['patient_id']=value.patient_uid
+                pat['care_plan_name']=value.care_plan_name
+                pat['care_plan_description']=value.care_plan_description
+                pat['care_plan_reason']=value.care_plan_reason
+                pat['care_plan_expiry_date']=value.care_plan_expiry_date
+            for value in result2:    
+                pat['service_name']=value.service_name
+                pat['service_type']=value.service_type
+                pat['description']=value.description
+                pat['reason_for_request']=value.reason_for_request
+                pat['reason_description']=value.reason_description
+                pat['clinical_indication']=value.clinical_indication
+                pat['intent']=value.intent
+                pat['urgency']=value.urgency
+                pat['service_due']=value.service_due
+                pat['service_period_start']=value.service_period_start
+                pat['service_period_expiry']=value.service_period_expiry
+                pat['indefinite']=value.indefinite
+                pat['supplementary_information']=value.supplementary_information
+                pat['information_description']=value.information_description
+                pat['comment']=value.comment
+                pat['requester_order_identifier']=value.requester_order_identifier
+                pat['receiver_order_identifier']=value.receiver_order_identifier
+                pat['request_status']=value.request_status
+                
+                #print(output)
+            if pat:    
+                return jsonify({"planofcare":pat})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'}) 
+        else:
+            return jsonify({'success':False,'message':'invalid email/password'}), 404       
+    except:
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+@app.route('/api/getplanofcarefordoctor',methods=['GET'])
+def getplanofcarefordoctor():
+    try:
+        token=request.headers['token']
+        value = jwt.decode(token, options={"verify_signature": False})
+        res = doctor_details.query.filter_by(email=value['email'], password=value['password']).first()
+        if res:
+            all_data=request.get_json()
+            patient_uid = all_data['patient_id']
+            result1 = db.session.query(Care_plan).filter(Care_plan.patient_uid==patient_uid).all()
+            result2 = db.session.query(Service_request).filter(Service_request.patient_uid==patient_uid).all()
+            pat = {}   
+            for value in result1:
+                pat['patient_id']=value.patient_uid
+                pat['care_plan_name']=value.care_plan_name
+                pat['care_plan_description']=value.care_plan_description
+                pat['care_plan_reason']=value.care_plan_reason
+                pat['care_plan_expiry_date']=value.care_plan_expiry_date
+            for value in result2:    
+                pat['service_name']=value.service_name
+                pat['service_type']=value.service_type
+                pat['description']=value.description
+                pat['reason_for_request']=value.reason_for_request
+                pat['reason_description']=value.reason_description
+                pat['clinical_indication']=value.clinical_indication
+                pat['intent']=value.intent
+                pat['urgency']=value.urgency
+                pat['service_due']=value.service_due
+                pat['service_period_start']=value.service_period_start
+                pat['service_period_expiry']=value.service_period_expiry
+                pat['indefinite']=value.indefinite
+                pat['supplementary_information']=value.supplementary_information
+                pat['information_description']=value.information_description
+                pat['comment']=value.comment
+                pat['requester_order_identifier']=value.requester_order_identifier
+                pat['receiver_order_identifier']=value.receiver_order_identifier
+                pat['request_status']=value.request_status
+                
+                #print(output)
+            if pat:    
+                return jsonify({"planofcare":pat})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'}) 
+        else:
+            return jsonify({'success':False,'message':'invalid email/password'}), 404       
+    except:
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+
+@app.route('/api/createplanofcareofpatient',methods=['POST'])
+def createplanofcareOfPatient():
+    try:
+        token = request.headers['token']
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        admin_check= Admin_Login.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if admin_check:
+            data=request.get_json()
+            p_id1 = Care_plan.query.filter_by(patient_uid=data['patient_id']).first()
+            p_id = Service_request.query.filter_by(patient_uid=data['patient_id']).first()
+            if p_id and p_id1:
+                p_id1.patient_uid=data['patient_id']
+                p_id1.care_plan_name=data['care_plan_name']
+                p_id1.care_plan_description=data['care_plan_description']
+                p_id1.care_plan_reason=data['care_plan_reason']
+                p_id1.care_plan_expiry_date=data['care_plan_expiry_date']
+                p_id.service_name=data['service_name']
+                p_id.service_type=data['service_type']
+                p_id.description=data['description']
+                p_id.reason_for_request=data['reason_for_request']
+                p_id.reason_description=data['reason_description']
+                p_id.clinical_indication=data['clinical_indication']
+                p_id.intent=data['intent'],
+                p_id.urgency=data['urgency']
+                p_id.service_due=data['service_due']
+                p_id.service_period_start=data['service_period_start']
+                p_id.service_period_expiry=data['service_period_expiry']
+                p_id.indefinite=data['indefinite']
+                p_id.supplementary_information=data['supplementary_information']
+                p_id.information_description=data['information_description']
+                p_id.comment=data['comment']
+                p_id.requester_order_identifier=data['requester_order_identifier']
+                p_id.receiver_order_identifier=data['receiver_order_identifier']
+                p_id.request_status=data['request_status']
+            else:
+                entry = Care_plan(patient_uid=data['patient_id'],care_plan_name=data['care_plan_name'],care_plan_description=data['care_plan_description'],care_plan_reason=data['care_plan_reason'],care_plan_expiry_date=data['care_plan_expiry_date'])
+                db.session.add(entry)
+                entry = Service_request(patient_uid=data['patient_id'],service_name=data['service_name'],service_type=data['service_type'],description=data['description'],reason_for_request=data['reason_for_request'],reason_description=data['reason_description'],clinical_indication=data['clinical_indication'],intent=data['intent'],
+                urgency=data['urgency'],service_due=data['service_due'],service_period_start=data['service_period_start'],service_period_expiry=data['service_period_expiry'],indefinite=data['indefinite'],supplementary_information=data['supplementary_information'],information_description=data['information_description'],comment=data['comment'],
+                requester_order_identifier=data['requester_order_identifier'],receiver_order_identifier=data['receiver_order_identifier'],request_status=data['request_status'])
+                db.session.add(entry)
+                db.session.commit()
+            return jsonify({'success':True,'message':'social history added successfully'})
+            # else:
+            #     return jsonify({'success':False,'message':'history already present'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised'}), 404
+    except:
+        return jsonify({'success':False,'message':'Request misses token/json data'}), 400
+
+
+@app.route('/api/getfunctionalstatusforpatient',methods=['GET'])
+def getfunctionalstatus():
+    try:
+        token=request.headers['token']
+        value = jwt.decode(token, options={"verify_signature": False})
+        res = Patient_details.query.filter_by(email=value['email'], password=value['password']).first()
+        if res:
+            #all_data=request.get_json()
+            #patient_uid = all_data['patient_uid']
+            result1 = db.session.query(Functional_status).filter(Care_plan.patient_uid==res.id).all()
+            pat = {}   
+            for value in result1:
+                pat['patient_id']=value.patient_uid
+                pat['diagnosis_name']=value.diagnosis_name
+                pat['body_site']=value.body_site
+                pat['date_of_onset']=value.date_of_onset
+                pat['severity']=value.severity   
+                pat['date_of_abatement']=value.date_of_abatement
+                pat['active_inactive']=value.active_inactive
+                pat['resolution_phase']=value.resolution_phase
+                pat['remission_status']=value.remission_status
+                pat['occurrence']=value.occurrence
+                pat['diagnostic_certainty']=value.diagnostic_certainty
+                pat['protocol_last_updated']=value.protocol_last_updated
+                pat['clinical_impression']=value.clinical_impression
+                
+                #print(output)
+            if pat:    
+                return jsonify({"functionalstatus":pat})
+            else:
+                return jsonify({'success':False,'message':'patient_id is not present'}) 
+        else:
+            return jsonify({'success':False,'message':'invalid email/password'}), 404       
+    except:
+        return jsonify({'success':False,'message':'not recieved JSON data'}),400 
+
+@app.route('/api/createfunctionalstatus',methods=['POST'])
+def createfunctionalOfPatient():
+    try:
+        token = request.headers['token']
+        decoded = jwt.decode(token, options={"verify_signature": False})
+        admin_check= Admin_Login.query.filter_by(email=decoded["email"], password=decoded['password']).first()
+        if admin_check:
+            data=request.get_json()
+            p_id = Functional_status.query.filter_by(patient_uid=data['patient_id']).first()
+            #p_id = Service_request.query.filter_by(patient_uid=data['patient_id']).first()
+            if p_id:
+                p_id.diagnosis_name=data['diagnosis_name']
+                p_id.body_site=data['body_site']
+                p_id.date_of_onset=data['date_of_onset']
+                p_id.severity=data['severity']
+                p_id.date_of_abatement=data['date_of_abatement']
+                p_id.active_inactive=data['active_inactive']
+                p_id.resolution_phase=data['resolution_phase']
+                p_id.remission_status=data['remission_status']
+                p_id.occurrence=data['occurrence']
+                p_id.diagnostic_certainty=data['diagnostic_certainty']
+                p_id.protocol_last_updated=data['protocol_last_updated']
+                p_id.clinical_impression=data['clinical_impression']
+            else:
+                entry = Functional_status(patient_uid=data['patient_id'],diagnosis_name=data['diagnosis_name'],body_site=data['body_site'],date_of_onset=data['date_of_onset']
+                ,severity=data['severity'],date_of_abatement=data['date_of_abatement'],active_inactive=data['active_inactive'],resolution_phase=data['resolution_phase'],
+                remission_status=data['remission_status'],occurrence=data['occurrence'],diagnostic_certainty=data['diagnostic_certainty'],protocol_last_updated=data['protocol_last_updated'],clinical_impression=data['clinical_impression'])
+                db.session.add(entry)
+                
+    
+                db.session.commit()
+            return jsonify({'success':True,'message':'functional status added successfully'})
+            # else:
+            #     return jsonify({'success':False,'message':'history already present'}), 404
+        else:
+            return jsonify({'success':False,'message':'Not Authorised'}), 404
+    except:
+        return jsonify({'success':False,'message':'Request misses token/json data'}), 400
 
 if __name__ == "__main__":
     app.run(debug=True, port=7000)
