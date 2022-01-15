@@ -485,8 +485,8 @@ def addPrescription():
         if docResult:
             docId = docResult.id
             data = request.get_json()
-            # patId = data['patient_id']
-            result = Patient_details.query.filter_by(email = data['patient_email']).first()
+            patId = data['patient_id']
+            result = Patient_details.query.filter_by(id = data['patient_id']).first()
             if result:
                 patId = result.id
                 entry = Prescription(patientId = patId,doctorId = docId)
@@ -703,46 +703,53 @@ def getMedicationOrderByIdForDoctor():
             data = request.get_json()
             medId = data['medId']
             result = Medication_Order.query.filter_by(medId = medId).first()
-            if result:
-                output = {}
-                output['medicationItem'] = result.medicationItem
-                output['route'] =  result.route
-                output['dosageInstruction'] = result.dosageInstruction
-                output['maximumAmount'] = result.maximumAmount 
-                output['maximumAmountDoseUnit'] =result.maximumAmountDoseUnit
-                output['allowedPeriod'] =  result.allowedPeriod
-                output['overrideReason'] = result.overrideReason
-                output['additionalInstructions'] =result.additionalInstructions
-                output['reasons'] =result.reasons
-                output['status'] =result.status
-                output['dateDiscontinued']=result.dateDiscontinued
-                output['dateWritten']=result.dateWritten
-                output['numOfRepeatsAllowed']=result.numOfRepeatsAllowed
-                output['validityPeriod']=result.validityPeriod
-                output['dispenseInstrution']=result.dispenseInstrution
-                output['dispenseAmountDescription']=result.dispenseAmountDescription
-                output['dispenseAmount']=result.dispenseAmount
-                output['dispenseAmountUnit']=result.dispenseAmountUnit
-                output['comment']=result.comment
-                output['dose_unit']=result.dose_unit
-                output['dose_frequency']=result.dose_frequency
-                output['dose_timing']=result.dose_timing
-                output['dose_duration']=result.dose_duration
-                output['repetition_interval']=result.repetition_interval
-                output['Specific_date']=result.Specific_date
-                output['specific_day_of_week']=result.specific_day_of_week
-                output['Specific_day_of_month']=result.Specific_day_of_month
-                output['specific_Event']=result.specific_Event
-                output['substance_name']=result.substance_name
-                output['form']=result.form
-                output['strength']=result.strength
-                output['strengthUnit']=result.strengthUnit
-                output['diluentAmount']=result.diluentAmount
-                output['diluentunit']=result.diluentunit
-                output['description']=result.description
-                return jsonify(output)
+            pres_id = result.prescriptionId
+            print(pres_id)
+            print(docRes.id)
+            docverify =Prescription.query.filter_by(prescriptionId = pres_id,doctorId=docRes.id).first()
+            if docverify:
+                if result:
+                    output = {}
+                    output['medicationItem'] = result.medicationItem
+                    output['route'] =  result.route
+                    output['dosageInstruction'] = result.dosageInstruction
+                    output['maximumAmount'] = result.maximumAmount 
+                    output['maximumAmountDoseUnit'] =result.maximumAmountDoseUnit
+                    output['allowedPeriod'] =  result.allowedPeriod
+                    output['overrideReason'] = result.overrideReason
+                    output['additionalInstructions'] =result.additionalInstructions
+                    output['reasons'] =result.reasons
+                    output['status'] =result.status
+                    output['dateDiscontinued']=result.dateDiscontinued
+                    output['dateWritten']=result.dateWritten
+                    output['numOfRepeatsAllowed']=result.numOfRepeatsAllowed
+                    output['validityPeriod']=result.validityPeriod
+                    output['dispenseInstrution']=result.dispenseInstrution
+                    output['dispenseAmountDescription']=result.dispenseAmountDescription
+                    output['dispenseAmount']=result.dispenseAmount
+                    output['dispenseAmountUnit']=result.dispenseAmountUnit
+                    output['comment']=result.comment
+                    output['dose_unit']=result.dose_unit
+                    output['dose_frequency']=result.dose_frequency
+                    output['dose_timing']=result.dose_timing
+                    output['dose_duration']=result.dose_duration
+                    output['repetition_interval']=result.repetition_interval
+                    output['Specific_date']=result.Specific_date
+                    output['specific_day_of_week']=result.specific_day_of_week
+                    output['Specific_day_of_month']=result.Specific_day_of_month
+                    output['specific_Event']=result.specific_Event
+                    output['substance_name']=result.substance_name
+                    output['form']=result.form
+                    output['strength']=result.strength
+                    output['strengthUnit']=result.strengthUnit
+                    output['diluentAmount']=result.diluentAmount
+                    output['diluentunit']=result.diluentunit
+                    output['description']=result.description
+                    return jsonify(output)
+                else:
+                    return jsonify({'success':False,'message':'Invalid Med Id'}),404
             else:
-                return jsonify({'success':False,'message':'Invalid Med Id'}),404
+                return jsonify({'success':False,'message':'Not Authorised'}),404
         else:
             return jsonify({'success':False,'message':'Not Authorised, Not a Doctor'}),404
 
@@ -767,46 +774,52 @@ def getMedicationOrderByIdForPatient():
             data = request.get_json()
             medId = data['medId']
             result = Medication_Order.query.filter_by(medId = medId).first()
-            if result:
-                output = {}
-                output['medicationItem'] = result.medicationItem
-                output['route'] =  result.route
-                output['dosageInstruction'] = result.dosageInstruction
-                output['maximumAmount'] = result.maximumAmount 
-                output['maximumAmountDoseUnit'] =result.maximumAmountDoseUnit
-                output['allowedPeriod'] =  result.allowedPeriod
-                output['overrideReason'] = result.overrideReason
-                output['additionalInstructions'] =result.additionalInstructions
-                output['reasons'] =result.reasons
-                output['status'] =result.status
-                output['dateDiscontinued']=result.dateDiscontinued
-                output['dateWritten']=result.dateWritten
-                output['numOfRepeatsAllowed']=result.numOfRepeatsAllowed
-                output['validityPeriod']=result.validityPeriod
-                output['dispenseInstrution']=result.dispenseInstrution
-                output['dispenseAmountDescription']=result.dispenseAmountDescription
-                output['dispenseAmount']=result.dispenseAmount
-                output['dispenseAmountUnit']=result.dispenseAmountUnit
-                output['comment']=result.comment
-                output['dose_unit']=result.dose_unit
-                output['dose_frequency']=result.dose_frequency
-                output['dose_timing']=result.dose_timing
-                output['dose_duration']=result.dose_duration
-                output['repetition_interval']=result.repetition_interval
-                output['Specific_date']=result.Specific_date
-                output['specific_day_of_week']=result.specific_day_of_week
-                output['Specific_day_of_month']=result.Specific_day_of_month
-                output['specific_Event']=result.specific_Event
-                output['substance_name']=result.substance_name
-                output['form']=result.form
-                output['strength']=result.strength
-                output['strengthUnit']=result.strengthUnit
-                output['diluentAmount']=result.diluentAmount
-                output['diluentunit']=result.diluentunit
-                output['description']=result.description
-                return jsonify(output)
+            pres_id = result.prescriptionId
+            patverify =Prescription.query.filter_by(prescriptionId = pres_id,patientId=patRes.id).first()
+            if patverify:
+
+                if result:
+                    output = {}
+                    output['medicationItem'] = result.medicationItem
+                    output['route'] =  result.route
+                    output['dosageInstruction'] = result.dosageInstruction
+                    output['maximumAmount'] = result.maximumAmount 
+                    output['maximumAmountDoseUnit'] =result.maximumAmountDoseUnit
+                    output['allowedPeriod'] =  result.allowedPeriod
+                    output['overrideReason'] = result.overrideReason
+                    output['additionalInstructions'] =result.additionalInstructions
+                    output['reasons'] =result.reasons
+                    output['status'] =result.status
+                    output['dateDiscontinued']=result.dateDiscontinued
+                    output['dateWritten']=result.dateWritten
+                    output['numOfRepeatsAllowed']=result.numOfRepeatsAllowed
+                    output['validityPeriod']=result.validityPeriod
+                    output['dispenseInstrution']=result.dispenseInstrution
+                    output['dispenseAmountDescription']=result.dispenseAmountDescription
+                    output['dispenseAmount']=result.dispenseAmount
+                    output['dispenseAmountUnit']=result.dispenseAmountUnit
+                    output['comment']=result.comment
+                    output['dose_unit']=result.dose_unit
+                    output['dose_frequency']=result.dose_frequency
+                    output['dose_timing']=result.dose_timing
+                    output['dose_duration']=result.dose_duration
+                    output['repetition_interval']=result.repetition_interval
+                    output['Specific_date']=result.Specific_date
+                    output['specific_day_of_week']=result.specific_day_of_week
+                    output['Specific_day_of_month']=result.Specific_day_of_month
+                    output['specific_Event']=result.specific_Event
+                    output['substance_name']=result.substance_name
+                    output['form']=result.form
+                    output['strength']=result.strength
+                    output['strengthUnit']=result.strengthUnit
+                    output['diluentAmount']=result.diluentAmount
+                    output['diluentunit']=result.diluentunit
+                    output['description']=result.description
+                    return jsonify(output)
+                else:
+                    return jsonify({'success':False,'message':'Invalid Med Id'}),404
             else:
-                return jsonify({'success':False,'message':'Invalid Med Id'}),404
+                return jsonify({'success':False,'message':'Not Authorised'}),404
         else:
             return jsonify({'success':False,'message':'Not Authorised, Not a Patient'}),404
 
@@ -1332,7 +1345,7 @@ def getallAllergiesForDoctor():
 def getallAllergiesForPatient():
     try:
         #patient verification
-        token = request.header['token']
+        token = request.headers['token']
         value = jwt.decode(token, options={"verify_signature": False})
         email = value["email"]
         password = value["password"]
@@ -1395,7 +1408,7 @@ def getAllergyByIdForDoctor():
 
                 return jsonify({'allergy':output}), 200
             else:
-                return jsonify({'success':False, "message":"Allergy does not exist for patient"}), 404
+                return jsonify({'success':False, "message":"Allergy does not exist"}), 404
     except Exception as e:
         print(e)
         return jsonify({'success':False,'message':'not recieved JSON data'}),400 
@@ -1431,7 +1444,7 @@ def getAllergyByIdForPatient():
 
                 return jsonify({'allergy':output}), 200
             else:
-                return jsonify({'success':False, "message":"This Allergy does not exist for this patient"}), 404
+                return jsonify({'success':False, "message":"This Allergy does not exist"}), 404
         else:
             return jsonify({'success':False,'message':'Not Authorised, not a Patient'}), 404
     except Exception as e:
@@ -1530,8 +1543,8 @@ def get_vital_signs_for_doctor():
 
 #get vital signs
     #for patient
-@app.route('/api/get_vital_signs', methods=['GET'])
-def get_vital_signs():
+@app.route('/api/get_vital_signs_for_patient', methods=['GET'])
+def get_vital_signs_for_patient():
     try:
         token = request.headers['token']    #patient token
         value = jwt.decode(token, options={"verify_signature": False})
@@ -1713,7 +1726,7 @@ def getDignosticsByIdForDoctor():
             result = dignostic_test_result.query.filter_by(id = dignostic_id).first()
             if result:
                 obj = {}
-                obj['lab_test_name'] = result.test_name
+                obj['lab_test_name'] = result.lab_test_name
                 obj['specimen_type'] = result.specimen_type
                 obj['specimen_method'] = result.specimen_method
                 obj['specimen_bodysite'] = result.specimen_bodysite
@@ -1722,7 +1735,7 @@ def getDignosticsByIdForDoctor():
                 obj['interpretation'] = result.interpretation
                 obj['multimedia_source_resource_name'] = result.multimedia_source_resource_name
                 obj['multimedia_source_content'] = result.multimedia_source_content
-                obj['imaging_test_name'] = result.test_name
+                obj['imaging_test_name'] = result.imaging_test_name
                 obj['modality'] = result.modality
                 obj['anatomical_site'] = result.anatomical_site
                 obj['imaging_finding_name'] = result.imaging_finding_name
@@ -1777,7 +1790,7 @@ def getDignosticsByIdForPatient():
             result = dignostic_test_result.query.filter_by(id = dignostic_id, patient_id = patient.id).first()
             if result:
                 obj = {}
-                obj['lab_test_name'] = result.test_name
+                obj['lab_test_name'] = result.lab_test_name
                 obj['specimen_type'] = result.specimen_type
                 obj['specimen_method'] = result.specimen_method
                 obj['specimen_bodysite'] = result.specimen_bodysite
@@ -1786,7 +1799,7 @@ def getDignosticsByIdForPatient():
                 obj['interpretation'] = result.interpretation
                 obj['multimedia_source_resource_name'] = result.multimedia_source_resource_name
                 obj['multimedia_source_content'] = result.multimedia_source_content
-                obj['imaging_test_name'] = result.test_name
+                obj['imaging_test_name'] = result.imaging_test_name
                 obj['modality'] = result.modality
                 obj['anatomical_site'] = result.anatomical_site
                 obj['imaging_finding_name'] = result.imaging_finding_name
@@ -1838,7 +1851,15 @@ def getPatientForDoctor():
             pat_email = data['patient_email']
             patient = Patient_details.query.filter_by(email = pat_email).first()
             if patient:
-                return jsonify({"patient_id":patient.id})
+                obj = {}
+                obj['id'] = patient.id
+                obj['name'] = patient.name
+                obj['age'] = patient.age
+                obj['email'] = patient.email
+                obj['contact'] = patient.contact
+                obj['gender'] = patient.gender
+                obj['address'] = patient.address
+                return jsonify({"patient":obj})
             else:
                 return jsonify({'success':False,'message':'Not a patient'}), 404
         else:
@@ -1862,7 +1883,15 @@ def getPatientForAdmin():
             pat_email = data['patient_email']
             patient = Patient_details.query.filter_by(email = pat_email).first()
             if patient:
-                return jsonify({"patient_id":patient.id})
+                obj = {}
+                obj['id'] = patient.id
+                obj['name'] = patient.name
+                obj['age'] = patient.age
+                obj['email'] = patient.email
+                obj['contact'] = patient.contact
+                obj['gender'] = patient.gender
+                obj['address'] = patient.address
+                return jsonify({"patient":obj})
             else:
                 return jsonify({'success':False,'message':'Not a patient'}), 404
         else:
