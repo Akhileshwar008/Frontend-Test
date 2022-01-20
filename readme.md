@@ -5,3 +5,4 @@
 2. Create a PR when a particular module is fully functional.
 
 3. Repo structure change should be discussed with everyone beforehand.
+4. keep the above points.
